@@ -15,12 +15,6 @@ import random
 from queue import Queue
 import threading
 
-#Global scope so all threads can use them
-used_proxies = {}
-proxies = []
-updating_proxies = False
-proxies_updated = Event()
-proxies_updating = False
 
 # Query to search
 query = "(AllField:(VR) OR AllField:(Virtual reality) OR AllField:(augmented reality) OR AllField:(AR) OR AllField:(Mixed reality) or OR AllField:(XR)) AND (AllField:(Multiuser) OR AllField:(multi-user) OR AllField:(collaborative))"
@@ -29,7 +23,7 @@ query = "(AllField:(VR) OR AllField:(Virtual reality) OR AllField:(augmented rea
 url_base = "https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl"
 
 
-query_encoded = areq.encode_boolean_expression(query, 'ACM')
+query_encoded = areq.encode_boolean_expression(query)
 query_name = "AllField"
 url_base = areq.add_parameter_to_url(url_base, query_name, query_encoded)
 task_queue = Queue()
@@ -59,7 +53,7 @@ def update_proxies_async():
 
         proxies_updated.clear() 
 
-def get_total_resutls() -> int:
+def get_total_query_results() -> int:
 
     page_prm_str = "pageSize"
     page_size = "1"
@@ -204,7 +198,7 @@ def get_issue_details(doi, connection):
 def scrape_acm_pages_multithreaded(page_size, url_base):
     # First I will get the 
     print("Let's  GO!!!")
-    total_results = get_total_resutls()
+    total_results = get_total_query_results()
     #total_results = 100
     print('Total results:' ,total_results)
     connection = dbm.connect_to_db()

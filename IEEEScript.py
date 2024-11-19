@@ -14,13 +14,7 @@ import time
 import random
 from queue import Queue
 import threading
-
-#Global scope so all threads can use them
-used_proxies = {}
-proxies = []
-updating_proxies = False
-proxies_updated = Event()
-proxies_updating = False
+import DBUtils as utils
 
 # Query to search
 query = '(("All Metadata":VR) OR ("All Metadata":Virtual reality) OR ("All Metadata":augmented reality) OR ("All Metadata":AR) OR ("All Metadata":mixed reality) OR ("All Metadata":XR)) AND (("All Metadata":Multiuser) OR ("All Metadata":multi-user) OR ("All Metadata":collaborative))'
@@ -30,27 +24,19 @@ query = '(("All Metadata":VR) OR ("All Metadata":Virtual reality) OR ("All Metad
 url_base = "https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&matchBoolean=true"
 
 
-query_encoded = areq.encode_boolean_expression(query, 'ACM')
+query_encoded = areq.encode_boolean_expression(query)
 query_name = "queryText"
 url_base = areq.add_parameter_to_url(url_base, query_name, query_encoded)
 task_queue = Queue()
 
 
-def get_total_resutls() -> int:
-
-    page_prm_str = "pageSize"
-    page_size = "1"
-    url_base_results = areq.add_parameter_to_url(url_base, page_prm_str, page_size) 
-
-    page_count_str = "startPage"
-    page_count = 1
-    url_base_results = areq.add_parameter_to_url(url_base_results, page_count_str, str(page_count))
+def get_total_query_results() -> int:
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36"
     }
 
-    response = requests.get(url_base_results, headers=headers)
+    response = requests.get(url_base, headers=headers)
     if response.status_code != 200:
         print("Failed to retrieve page")
         return 0
@@ -63,7 +49,12 @@ def get_total_resutls() -> int:
 
 # Reads a page from results and get all the issues storing them into the database
 def get_acm_papers_page(soup: BeautifulSoup, id_query : int, connection):
-    for item in soup.select("li.search__item"):
+    for item in soup.select("div.result-item-align"):
+        title_info = item.select_one("h3")
+        title = title_info.get_text(strip=True)
+        description = item.select_one('div.description')
+        venue = description.select_one('a').get_text()
+        
         publication_type = item.select_one("div.issue-heading")
         issue_type = publication_type.getText()
         date = item.find("div", class_="bookPubDate")
@@ -72,83 +63,19 @@ def get_acm_papers_page(soup: BeautifulSoup, id_query : int, connection):
         date_day = date_lst[0]
         date_month = date_lst[1]
         date_year = date_lst[2]
-        title_info = item.select_one(".issue-item__title a")
-        title = title_info.get_text(strip=True)
         doi = title_info['href']
         print(date_str + ' - ' + title + ' - ' + doi)
         dbm.insert_data_issue(title, doi, issue_type, date_str, int(date_day), date_month, int(date_year), id_query, connection)
 
 
+def build_url(page_count, page_size) :  
+    page_prm_str = "pageSize"
+    url_base_results = areq.add_parameter_to_url(url_base, page_prm_str, page_size) 
 
-def make_request(url) :
-    
-    global proxies, used_proxies
-    
-    while True:
+    page_count_str = "startPage"
+    url_page = areq.add_parameter_to_url(url_base_results, page_count_str, str(page_count))      
 
-        print('Requesting website....', url)
-        if len(proxies) == 0:
-            print('Make request...\n\tProxies empty!...thread sleeping until the proxies are available')
-            #if not proxies_updating:
-            task_queue.put('Refill proxies!!!')
-            proxies_updated.wait()
-            
-        proxy = None
-
-        # Re-filled proxies can include some of the already rejected proxies, I select randomly re-rejecting possible previous proxies
-        while proxy is None:
-            proxy = random.choice(proxies)
-            proxy_str =  f"{proxy['ip']}:{proxy['port']}"
-            print('Trying page ... ', url , ' ... proxy : ', proxy_str)
-            if proxy_str in used_proxies:
-                print('Proxy : ', proxy_str, ' already used, removing from ', len(proxies))
-                try:
-                    proxies.remove(proxy)
-                    print('Remaining proxies ', len(proxies))
-                except Exception as e:
-                    print('Not removing proxy, something happened')
-                proxy = None
-
-        # If the proxy is exists, I try to reach the website
-        if proxy is not None:
-            formatted_proxy = prox.format_proxy(proxy)
-            try:
-                response = requests.get(url, proxies=formatted_proxy, timeout=500)
-                response.raise_for_status()  # Check for HTTP errors
-                print('Request at:' , url, ' got an answer!')
-                
-                # Unsatisfactory result
-                if response.status_code != 200 or response == None:
-                    used_proxies[proxy_str] = f"Failed to retrieve page. Status code {response.status_code}"
-                    try:
-                        proxies.remove(proxy)
-                    except Exception as e:
-                        print('Something happened removing')
-                    print('Request at:' , url, f' WRONG ANSWER {response.status_code}!\nRemoving, remaining ', len(proxies))
-                else:
-                    print('Request at:' , url, ' GOOD answer!')
-                    return response
-
-            except requests.RequestException as e:
-                # If an error occurs, remove the proxy and print the error
-                print(f"Proxy failed ({proxy['ip']}:{proxy['port']}), trying another. Error: {e}")
-                used_proxies[proxy_str] = e
-                try:
-                    proxies.remove(proxy)
-                except e:
-                    print('Could not remove the proxie')
-                print('REMAINING PROXIES ', len(proxies))
-            except Exception as e1:
-                print(f"SOMETHING ELSE Proxy failed ({proxy['ip']}:{proxy['port']}), trying another. Error: {e}")
-                used_proxies[proxy_str] = e
-                try:
-                    proxies.remove(proxy)
-                except e:
-                    print('Could not remove the proxie')
-                print('REMAINING PROXIES ', len(proxies))
-                #response = None
-        
-
+    return url_page
 
 def get_acm_papers_request(page_count, page_size, connection):
 
@@ -189,7 +116,7 @@ def get_issue_details(doi, connection):
 def scrape_acm_pages_multithreaded(page_size, url_base):
     # First I will get the 
     print("Let's  GO!!!")
-    total_results = get_total_resutls()
+    total_results = get_total_query_results()
     #total_results = 100
     print('Total results:' ,total_results)
     connection = dbm.connect_to_db()

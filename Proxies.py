@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import json
 
 
+
+
 def load_txt_proxies():
     filename = 'proxies_list.txt'
     proxies = []
