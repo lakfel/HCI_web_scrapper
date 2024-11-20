@@ -90,3 +90,8 @@ ROBOTSTXT_OBEY = True
 # Set settings whose default value is deprecated to a future-proof value
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+
+ITEM_PIPELINES = {
+    'HCIScrapy.pipelines.MSSQLPipeline': 300,
+}
