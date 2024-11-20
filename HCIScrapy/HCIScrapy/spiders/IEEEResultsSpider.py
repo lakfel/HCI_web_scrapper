@@ -17,6 +17,7 @@ class IeeeresultsspiderSpider(scrapy.Spider):
     base_url = "https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&newsearch=true&matchBoolean=true"
 
     query = '(("All Metadata":VR) OR ("All Metadata":Virtual reality) OR ("All Metadata":augmented reality) OR ("All Metadata":AR) OR ("All Metadata":mixed reality) OR ("All Metadata":XR)) AND (("All Metadata":Multiuser) OR ("All Metadata":multi-user) OR ("All Metadata":collaborative))'
+    
     #query = '("All Metadata":VR)'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

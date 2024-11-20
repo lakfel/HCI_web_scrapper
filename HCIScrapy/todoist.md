@@ -1,0 +1,2 @@
+- Automotize the creation of the query. Probably in one pipeline that provides the encoded query and everything.
+- set the timestamps in the DB automatically there, not in the code here
