@@ -4,7 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 import random
 import Proxies as prox
-import ACMRequest as areq
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 import DBManager as dbm
@@ -14,35 +13,51 @@ import time
 import random
 from queue import Queue
 import threading
-import DBUtils as utils
+from urllib.parse import quote
+
 
 # Query to search
 query = '(("All Metadata":VR) OR ("All Metadata":Virtual reality) OR ("All Metadata":augmented reality) OR ("All Metadata":AR) OR ("All Metadata":mixed reality) OR ("All Metadata":XR)) AND (("All Metadata":Multiuser) OR ("All Metadata":multi-user) OR ("All Metadata":collaborative))'
-
 
 # URL for the search
 url_base = "https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&matchBoolean=true"
 
 
-query_encoded = areq.encode_boolean_expression(query)
-query_name = "queryText"
-url_base = areq.add_parameter_to_url(url_base, query_name, query_encoded)
-task_queue = Queue()
+def get_url_base():
+    query_encoded = encode_boolean_expression(query)
+    query_name = "queryText"
+    return add_parameter_to_url(url_base, query_name, query_encoded)
 
+    
+# It converts the query to be used in the URL, probably there is a better way to do this
+def encode_boolean_expression(expression: str) -> str:
+    return quote(expression, safe="+") 
+
+
+def add_parameter_to_url(url, parameter_name, parameter_value):
+    parameter_connector = "&"
+    parameter_assignment_str = "="
+    return url + parameter_connector + parameter_name + parameter_assignment_str + parameter_value
 
 def get_total_query_results() -> int:
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36"
     }
-
-    response = requests.get(url_base, headers=headers)
+    url = get_url_base()
+    response = requests.get(url, headers=headers)
+    print(url)
     if response.status_code != 200:
         print("Failed to retrieve page")
         return 0
     
     soup = BeautifulSoup(response.content, "html.parser")
-    result_count_tag = soup.select('.Dashboard-header > span > span')[1]
+    with open("ieee_test.html", 'w') as file:
+        print(str(soup),file=file)
+    result_count_tag = soup.select_one('h1.Dashboard-header')
+    result_count_tag = result_count_tag.select_one('span')
+    result_count_tag = result_count_tag.select('span')
+    result_count_tag = result_count_tag[1]
     result_count = int(result_count_tag.get_text().replace(" ,", ""))
     return result_count
 
@@ -163,6 +178,12 @@ def scrape_acm_issues_multithread():
 
 #proxies_manager = new ThreadPoolExecutor 
 
+
+
+
+
+#task_queue = Queue()
+
 def test_no_async():
     global proxies
     connection = dbm.connect_to_db()
@@ -170,13 +191,13 @@ def test_no_async():
     proxies = prox.load_txt_proxies()
     get_acm_papers_request(str(1),str(10), connection)
 
-consumer_thread = threading.Thread(target=update_proxies_async, daemon=True)
-consumer_thread.start()
+#consumer_thread = threading.Thread(target=update_proxies_async, daemon=True)
+#consumer_thread.start()
 #proxies = prox.load_txt_proxies()
 #scrape_acm_pages_multithreaded(50, url_base)
-scrape_acm_issues_multithread()
+#scrape_acm_issues_multithread()
 #test_no_async()
 
-task_queue.join()
-task_queue.put(None)  # Signal the consumer to stop
-consumer_thread.join()
+#task_queue.join()
+#task_queue.put(None)  # Signal the consumer to stop
+#consumer_thread.join()

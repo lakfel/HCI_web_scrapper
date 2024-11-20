@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import random
 import Proxies as prox
-import ACMRequest as areq
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 import DBManager as dbm
@@ -13,7 +12,7 @@ import random
 from queue import Queue
 import threading
 import ACMScript as acm
-import DBUtils as utils
+import IEEEScript as ieee
 
 
 #Global scope so all threads can use them
@@ -151,10 +150,15 @@ def scrape_issues_multithread(db:str, get_issue_details):
 
 
 
-def scrape_pages(page_size, url_base, get_total_query_results, get_papers_request):
+def scrape_pages(dbst):
     
-    print("Let's  GO!!!")
+
+    # First we retreive the info from the main website
+    get_total_query_results = dbst.get('get_total_query_results')
     total_results = get_total_query_results()
+    print(total_results)
+
+'''
     #total_results = 100
     print('Total results:' ,total_results)
     connection = dbm.connect_to_db()
@@ -176,23 +180,38 @@ def scrape_pages(page_size, url_base, get_total_query_results, get_papers_reques
             executor.submit(task_with_error_handling, str(page_count), str(page_size), connection)
             time.sleep(random.uniform(10, 45))
 
+'''
 
-consumer_thread = threading.Thread(target=update_proxies_async, daemon=True)
-consumer_thread.start()
 
-proxies = prox.load_txt_proxies()
 
-data_base = utils.DB_ACM
-get_results  = acm.get_total_query_results
+DB_ACM = 'ACM'
+DB_IEEE = 'IEEE'
 
-data_base = utils.DB_IEEE
-if data_base == utils.DB_IEEE:
-    get_results = 
+target_db = DB_IEEE
+
+strategies = {
+    DB_ACM : {
+        'get_total_query_results' : acm.get_total_query_results
+    },
+    DB_IEEE : {
+        'get_total_query_results' : ieee.get_total_query_results
+    }
+}
+
+strategy = strategies.get(target_db)
+scrape_pages(strategy)
+
+
+#consumer_thread = threading.Thread(target=update_proxies_async, daemon=True)
+#consumer_thread.start()
+
+#proxies = prox.load_txt_proxies()
+
 
 #scrape_acm_pages_multithreaded(50, url_base)
 #scrape_acm_issues_multithread()
 #test_no_async()
 
-task_queue.join()
-task_queue.put(None)  # Signal the consumer to stop
-consumer_thread.join()
+#task_queue.join()
+#task_queue.put(None)  # Signal the consumer to stop
+#consumer_thread.join()

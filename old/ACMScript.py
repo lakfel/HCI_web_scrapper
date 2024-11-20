@@ -4,7 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 import random
 import Proxies as prox
-import ACMRequest as areq
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 import DBManager as dbm
@@ -14,19 +13,21 @@ import time
 import random
 from queue import Queue
 import threading
+from urllib.parse import quote
 
 
-# Query to search
-query = "(AllField:(VR) OR AllField:(Virtual reality) OR AllField:(augmented reality) OR AllField:(AR) OR AllField:(Mixed reality) or OR AllField:(XR)) AND (AllField:(Multiuser) OR AllField:(multi-user) OR AllField:(collaborative))"
 
-# URL for the search
-url_base = "https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl"
+# It converts the query to be used in the URL, probably there is a better way to do this
+def encode_boolean_expression(expression: str) -> str:
+    expression = expression.replace(" ", "+")  
+    return quote(expression, safe="+") 
 
 
-query_encoded = areq.encode_boolean_expression(query)
-query_name = "AllField"
-url_base = areq.add_parameter_to_url(url_base, query_name, query_encoded)
-task_queue = Queue()
+
+def add_parameter_to_url(url, parameter_name, parameter_value):
+    parameter_connector = "&"
+    parameter_assignment_str = "="
+    return url + parameter_connector + parameter_name + parameter_assignment_str + parameter_value
 
 def update_proxies_async():
     global proxies, proxies_updating
@@ -253,17 +254,30 @@ def test_no_async():
     get_acm_papers_request(str(1),str(10), connection)
 
 
+# Query to search
+query = "(AllField:(VR) OR AllField:(Virtual reality) OR AllField:(augmented reality) OR AllField:(AR) OR AllField:(Mixed reality) or OR AllField:(XR)) AND (AllField:(Multiuser) OR AllField:(multi-user) OR AllField:(collaborative))"
+
+# URL for the search
+url_base = "https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl"
+
+
+query_encoded = encode_boolean_expression(query)
+query_name = "AllField"
+url_base = add_parameter_to_url(url_base, query_name, query_encoded)
+task_queue = Queue()
+
+
 
 #print('...getting the proxies')
-consumer_thread = threading.Thread(target=update_proxies_async, daemon=True)
-consumer_thread.start()
+#consumer_thread = threading.Thread(target=update_proxies_async, daemon=True)
+#consumer_thread.start()
 #print('...getting the proxies')
-proxies = prox.load_txt_proxies()
+#proxies = prox.load_txt_proxies()
 #print('...getting the proxies')
 #scrape_acm_pages_multithreaded(50, url_base)
-scrape_acm_issues_multithread()
+#scrape_acm_issues_multithread()
 #test_no_async()
 
-task_queue.join()
-task_queue.put(None)  # Signal the consumer to stop
-consumer_thread.join()
+#task_queue.join()
+#task_queue.put(None)  # Signal the consumer to stop
+#consumer_thread.join()
