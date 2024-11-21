@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.selector import Selector
+from scrapy_selenium import SeleniumRequest
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -8,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import quote
 import time
+from bs4 import BeautifulSoup
 
 class IeeeresultsspiderSpider(scrapy.Spider):
     name = "ieee_results"
@@ -23,14 +25,15 @@ class IeeeresultsspiderSpider(scrapy.Spider):
         super().__init__(*args, **kwargs)
         # Configuración de Selenium WebDriver
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")  # Descomentar si quieres ejecución sin interfaz gráfica
-        service = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')  # Reemplazar con la ruta de tu ChromeDriver
+        #chrome_options.add_argument('--headless')
+        #service = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')  # Reemplazar con la ruta de tu ChromeDriver
+        service = Service(f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe')  # Reemplazar con la ruta de tu ChromeDriver
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
 
         # Consulta de búsqueda
         self.query = '(("All Metadata":VR) OR ("All Metadata":Virtual reality) OR ("All Metadata":augmented reality) OR ("All Metadata":AR) OR ("All Metadata":mixed reality) OR ("All Metadata":XR)) AND (("All Metadata":Multiuser) OR ("All Metadata":multi-user) OR ("All Metadata":collaborative))'
         #self.query = '("All Metadata":VR) AND ("All Metadata":Virtual reality)'
-
+        self.wait_timeout = 10
 
 
     def encode_boolean_expression(self) -> str:
@@ -43,31 +46,56 @@ class IeeeresultsspiderSpider(scrapy.Spider):
         search_url = f"{self.base_url}&queryText={self.encode_boolean_expression()}"
         print(f'URL>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n{search_url}')
         # Usar Selenium para cargar la página
-        self.driver.get(search_url)
-
+        #self.driver.get(search_url)
+        headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': 'https://ieeexplore.ieee.org/',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
+            }
         # Esperar a que se cargue el elemento con los resultados
-        WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, '.Dashboard-header > span > span'))
-        )
+        #WebDriverWait(self.driver, 20).until(
+        #    EC.presence_of_element_located((By.CSS_SELECTOR, '.Dashboard-header > span > span'))
+        #)
         
         # Extraer el número total de resultados
+        
+
+        # Crear un item con la información
+        yield SeleniumRequest(
+            url =search_url,
+            headers = headers,
+            #'query': self.query,
+            callback = self.parse,
+            wait_time= self.wait_timeout, 
+            wait_until = EC.presence_of_element_located((By.CSS_SELECTOR, '.Dashboard-header > span > span'))
+        )
+
+        # Puedes agregar lógica adicional aquí para procesar los resultados
+        time.sleep(10)  # Pequeña pausa para estabilidad
+
+    def parse(self, response):
         try:
-            total_results_element = self.driver.find_elements(By.CSS_SELECTOR, '.Dashboard-header > span > span')[1]
-            total_results = total_results_element.text.replace(',', '')
-            total_results = int(total_results)
+            #soup = BeautifulSoup(response.content, "html.parser")
+            with open("ieee_test.html", 'w') as file:
+                print(response.text,file=file)
+                #print(str(soup),file=file)
+            total_results_elements = response.css('.Dashboard-header > span > span')
+            print(f'---------------------- ELEMENTOS\n\t{len(total_results_elements)}')
+            total_results_element = total_results_elements[1].get()
+            total_results = int(total_results_element.replace(',', ''))
         except Exception as e:
             self.logger.error(f"Error extrayendo total de resultados: {e}")
             total_results = 0
-
-        # Crear un item con la información
         yield {
-            'url': search_url,
+            'url':response.request.url,
             'query': self.query,
             'total_results': total_results
         }
-
-        # Puedes agregar lógica adicional aquí para procesar los resultados
-        time.sleep(2)  # Pequeña pausa para estabilidad
+        
 
     def closed(self, reason):
         # Cerrar el navegador de Selenium al finalizar

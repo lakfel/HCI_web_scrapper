@@ -28,8 +28,8 @@ class MSSQLPipeline:
 
 
     def open_spider(self, spider):
-        #self.conn = DatabaseConfig.get_connection()
-        #self.cursor = self.conn.cursor()
+        self.conn = DatabaseConfig.get_connection()
+        self.cursor = self.conn.cursor()
         if spider.stype == 'Pages':
             try:
                 self.db_param = getattr(spider, 'db', 'NoDB')
@@ -40,9 +40,8 @@ class MSSQLPipeline:
                         WHERE db = ? AND query = ?
                         ORDER BY timestamp DESC
                         """
-                #self.cursor.execute(query, (self.db_param, self.query_param))
+                self.cursor.execute(query, (self.db_param, self.query_param))
                 self.rows_par_page = 100
-                self.total_results  = 200
                 self.max_pages = math.ceil(self.total_results / self.rows_par_page)
 
                 # Definir consulta de búsqueda (puedes pasarla como atributo o definirla aquí)
@@ -61,29 +60,23 @@ class MSSQLPipeline:
     def process_item(self, item, spider):
         
         self.db_param = getattr(spider, 'db', 'NoDB')
-        print('---------------------------------------------------------------------------------------------')
         if spider.stype == 'Results':
             # Guardar datos para resultados IEEE
-            print(f"In pipeline for storing Query_total_results ", item.get('url', ''),  # url
+            self.cursor.execute(
+                """
+                INSERT INTO Query_total_results 
+                (db, timestamp, url, query, total_results) 
+                VALUES (?, ?, ?, ?, ?)
+                """, 
+                (
+                    self.db_param,
+                    datetime.now(),  # timestamp
+                    item.get('url', ''),  # url
                     item.get('query', ''),  # query de búsqueda
                     item.get('total_results', 0)  # total de resultados
                 )
-            
-            #self.cursor.execute(
-            #    """
-            #    INSERT INTO Query_total_results 
-            #    (db, timestamp, url, query, total_results) 
-            #    VALUES (?, ?, ?, ?, ?)
-            #    """, 
-            #    (
-            #        self.db_param,
-            #        datetime.now(),  # timestamp
-            #        item.get('url', ''),  # url
-            #        item.get('query', ''),  # query de búsqueda
-            #        item.get('total_results', 0)  # total de resultados
-            #    )
-            #)
-            #self.conn.commit()
+            )
+            self.conn.commit()
         elif spider.stype == 'Pages':
             return item
             try:

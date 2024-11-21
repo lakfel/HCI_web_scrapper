@@ -6,6 +6,7 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+from shutil import which
 
 BOT_NAME = "HCIScrapy"
 
@@ -91,7 +92,16 @@ ROBOTSTXT_OBEY = True
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
+SELENIUM_DRIVER_NAME = 'chrome'
+SELENIUM_DRIVER_EXECUTABLE_PATH = which('chromedriver')
+#SELENIUM_DRIVER_EXECUTABLE_PATH = f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe'#which('geckodriver')
+SELENIUM_DRIVER_ARGUMENTS=['-headless']  # '--headless' if using chrome instead of firefox
+
 
 ITEM_PIPELINES = {
     'HCIScrapy.pipelines.MSSQLPipeline': 300,
+}
+
+DOWNLOADER_MIDDLEWARES = {
+    #'scrapy_selenium.SeleniumMiddleware': 800
 }
