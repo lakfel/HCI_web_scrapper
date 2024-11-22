@@ -4,8 +4,78 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+from scrapy.http import HtmlResponse
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+class SeleniumMiddleware:
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls()
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
 
 
+    def spider_opened(self, spider):
+        spider.logger.info("Spider opened: %s" % spider.name)
+
+    
+
+    # TODO If needed the rotative headers must be done in the middleware
+    def process_request(self, request, spider):
+        print('-----------Middleware Process')
+        
+        print('Middleware INIT')
+        chrome_options = Options()
+        #chrome_options.add_argument("--headless") 
+        chrome_options.add_argument("--disable-gpu")   # Improve in wondows
+        chrome_options.add_argument("--no-sandbox") 
+        #service = Service(f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe')  # Chrome driver path
+        service = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')  
+
+        spider.driver = webdriver.Chrome(
+            service=service,
+            options=chrome_options
+        )
+        # Attribute used in the spider to stablish if they will use or not Selenium
+        if request.meta.get('use_selenium', False):
+            
+            # If there is any specific selector for selenium to wait for it to be loaded
+            key_selector = request.meta.get('key_selector', '')
+            print('------Right here ---------------------------------------------------------------------------------------')
+            spider.driver.get(request.url)
+            print('------Right here HERE ---------------------------------------------------------------------------------------')
+            if key_selector != '' :
+                WebDriverWait(spider.driver, 20).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, key_selector))
+                )
+            print('------Right here 3 ---------------------------------------------------------------------------------------')
+            
+            time.sleep(2)
+
+            body = spider.driver.page_source
+                  
+            #with open("ieee_test2.html", 'w',  encoding='ISO-8859-1') as file:
+            #    print(body,file=file)
+            
+           
+            return HtmlResponse(
+                spider.driver.current_url,
+                body=body,
+                encoding='utf-8',
+                request=request
+            )
+        return None  # Permite que Scrapy maneje la solicitud normalmente
+
+    
 
 
 class HciscrapySpiderMiddleware:

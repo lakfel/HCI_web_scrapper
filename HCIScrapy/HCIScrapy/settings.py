@@ -21,7 +21,7 @@ NEWSPIDER_MODULE = "HCIScrapy.spiders"
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 1
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -97,11 +97,16 @@ SELENIUM_DRIVER_EXECUTABLE_PATH = which('chromedriver')
 #SELENIUM_DRIVER_EXECUTABLE_PATH = f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe'#which('geckodriver')
 SELENIUM_DRIVER_ARGUMENTS=['-headless']  # '--headless' if using chrome instead of firefox
 
+custom_settings = {
+    'DEPTH_LIMIT': 0,  # Sin límite de profundidad
+    'CLOSESPIDER_PAGECOUNT': None,  # Sin límite de páginas
+}
 
 ITEM_PIPELINES = {
+    'HCIScrapy.pipelines.QueryPipeline': 200,
     'HCIScrapy.pipelines.MSSQLPipeline': 300,
 }
 
 DOWNLOADER_MIDDLEWARES = {
-    #'scrapy_selenium.SeleniumMiddleware': 800
+    'HCIScrapy.middlewares.SeleniumMiddleware': 800
 }
