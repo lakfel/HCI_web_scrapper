@@ -50,19 +50,17 @@ class SeleniumMiddleware:
             
             # If there is any specific selector for selenium to wait for it to be loaded
             key_selector = request.meta.get('key_selector', '')
-            print('------Right here ---------------------------------------------------------------------------------------')
             spider.driver.get(request.url)
-            print('------Right here HERE ---------------------------------------------------------------------------------------')
             if key_selector != '' :
-                WebDriverWait(spider.driver, 20).until(
+                WebDriverWait(spider.driver, 40).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, key_selector))
                 )
-            print('------Right here 3 ---------------------------------------------------------------------------------------')
             
             time.sleep(2)
 
             body = spider.driver.page_source
-                  
+            url = request.meta.get('url', '')
+            spider.metadata[url] = spider.driver.execute_script('return window.xplGlobal.document.metadata;')
             #with open("ieee_test2.html", 'w',  encoding='ISO-8859-1') as file:
             #    print(body,file=file)
             

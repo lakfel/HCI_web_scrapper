@@ -111,7 +111,7 @@ class DatabaseConfig:
         try:
             where_clause = " AND ".join([f" {field} {connector} {('NULL' if value is None  else '?')} " for field, connector, value in conditions])
             values = [value for _, _, value in conditions if value is not None]
-            query = f"SELECT top 1 {url_field} FROM Issues WHERE {where_clause}"
+            query = f"SELECT {url_field} FROM Issues WHERE {where_clause}"
             print(f'Trying to reach query {query}')
             cursor.execute(query, *values)
             urls = [row[0] for row in cursor.fetchall()] 

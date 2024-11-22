@@ -29,7 +29,7 @@ class IeeeissuesspiderSpider(scrapy.Spider):
         self.total_results = 0
         self.max_pages = 0
         self.wait_timeout = 10
-
+        self.metadata = {}
 
 
     def start_requests(self):
@@ -50,7 +50,7 @@ class IeeeissuesspiderSpider(scrapy.Spider):
                 search_url, 
                 meta={
                     'use_selenium': True, 
-                    'key_selector' : '.abstract-text',
+                    'key_selector' : 'meta[name="parsely-type"]',
                     'url': url},
                 dont_filter=True
             )
@@ -61,42 +61,52 @@ class IeeeissuesspiderSpider(scrapy.Spider):
 
     def parse(self, response):
         try:
+            #with open("ieee_test.html", 'w') as file:
+            #    print(response.text.encode("utf-8"),file=file)
+            #with open("ieee_test_meta.js", 'w') as file:
+            #    print(self.metadata,file=file)                
             
-
-            with open("ieee_test.html", 'w') as file:
-                print(response.text.encode("utf-8"),file=file)
-
-            title = response.css('.document-title span').xpath('.//text()').get()
-            doi = response.css('.stats-document-abstract-doi a').xpath('.//text()').get()
-            date_str = response.css('.doc-abstract-pubdate').xpath('normalize-space(text())').get().strip()
-            date_info = date_str.split()
-            date_day = date_info[0]
-            date_month = date_info[1]
-            date_year = date_info[2]
-            abstract_t = response.css('.abstract-text').xpath('.//text()').getall()
-            abstract = ''.join(abstract_t).strip()
-            metrics = response.css('div.document-banner-metric-count')
-            citations = metrics[0].xpath('.//text()').get()
-            downloads = metrics[1].xpath('.//text()').get()
-            comments = 'Downloads refer to full text views'
             url = response.meta['url']
+            item = {'db' : self.db, 'url' : url}
 
-                    
-            yield {
-                'db' : self.db,
-                'title': title,
-                'doi' : doi,
-                'date' : date_str,
-                'date_day' : int(date_day),
-                'date_month' : date_month,
-                'date_year' : int(date_year),
-                'abstract' : abstract,
-                'status' : 'OK',
-                'comments' : comments,
-                'citations' : int(citations),
-                'downloads' : int(downloads),
-                'url' : url,
-                # Añade más campos según necesites
-            }
+            metadata = self.metadata[url]
+
+            if 'title' in metadata:
+                item['title'] = metadata['title']
+            if 'doi' in metadata:
+                item['doi'] = metadata['doi']
+            if 'xploreDocumentType' in metadata:
+                item['comments'] = metadata['xploreDocumentType']
+            if 'displayPublicationDate' in metadata:
+                item['date'] = metadata['displayPublicationDate'].strip()
+                #date_day = int(date.split()[0].split('-')[0])
+                #date_month = date.split()[1]
+                #item['date_day'] = date_day
+                #item['date_month'] = date_month
+                #item['date'] = date
+                #date_year = int(date.split()[2])
+            if 'publicationYear' in metadata:
+                item['date_year'] = metadata['publicationYear']
+            if 'abstract' in metadata:
+                item['abstract'] = metadata['abstract']
+
+            item['status'] = 'OK'
+
+            if 'publicationTitle' in metadata:
+                item['venue'] = metadata['publicationTitle']
+
+            if 'metrics'in metadata:
+                metrics = metadata['metrics']
+                if 'citationCountPaper' in metrics:
+                    item['Citations'] = metrics['citationCountPaper']
+                if 'totalDownloads' in metrics:
+                    item['Downloads'] = metrics['totalDownloads']
+
+            del self.metadata[url]
+
+            yield item
+        
         except Exception as e:
             self.logger.error(f"Error en parse_search: {e}")
+
+    

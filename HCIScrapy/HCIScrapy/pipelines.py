@@ -99,7 +99,8 @@ class MSSQLPipeline:
             urls = DatabaseConfig.get_all_unreached_issues_urls( url_field , 
                                                                 [
                                                                     ('status', 'IS', None),
-                                                                    ('db', '=',db)
+                                                                    ('db', '=',db),
+                                                                    ('url', 'IS NOT', None)
                                                                 ] )
             print(f'Documents reached {len(urls)}')
             spider.documents = urls
