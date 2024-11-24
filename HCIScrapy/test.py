@@ -2,6 +2,28 @@ from scrapy.http import HtmlResponse
 import os
 from bs4 import BeautifulSoup
 
+
+
+        
+def open_spider(search_terms, db):
+    
+    if db == 'ACM':
+        or_groups = []
+        for group in search_terms:
+            or_groups.append(" OR ".join([f'("AllField:(":{term})' for term in group]))
+        return " AND ".join([f'({term})' for term in or_groups])
+    elif db == 'IEEE':
+        or_groups = []
+        for group in search_terms:
+            or_groups.append(" OR ".join([f'("All Metadata":{term})' for term in group]))
+        return " AND ".join([f'({term})' for term in or_groups])
+    elif db == 'Springer':
+        or_groups = []
+        for group in search_terms:
+            or_groups.append(" OR ".join([f'"{term}"' for term in group]))
+        return " AND ".join([f'({term})' for term in or_groups])
+    return ''
+
 def search_css_in_folder(folder_path, css_selector):
     # Verificar que la ruta es válida
     if not os.path.isdir(folder_path):
@@ -51,7 +73,19 @@ def printV(variable):
     print(f'{name} : {variable}')
 
 
-search_css_in_folder(f'C:\\Users\\johannavila\\Documents\\Research\\Multiuser CVE Survey paper\\Scripts\\HCIScrapy\\ieee_types','.stats-document-abstract-doi')
+    
+search_terms = [
+                ["VR", "Virtual reality", "augmented reality", "AR", "mixed reality", "XR"],  
+                ["Multiuser", "multi-user", "collaborative"]  
+            ]
+        
+print(open_spider(search_terms=search_terms, db='ACM'))
+print(open_spider(search_terms=search_terms, db='IEEE'))
+print(open_spider(search_terms=search_terms, db='Springer'))
+
+
+
+#search_css_in_folder(f'C:\\Users\\johannavila\\Documents\\Research\\Multiuser CVE Survey paper\\Scripts\\HCIScrapy\\ieee_types','.stats-document-abstract-doi')
 """
 # Cargar el archivo HTML local
 with open('C:\\Users\\johannavila\\Documents\\Research\\Multiuser CVE Survey paper\\Scripts\\HCIScrapy\\ieee_test.html', 'r', encoding='ISO-8859-1') as f:

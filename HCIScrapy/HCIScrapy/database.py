@@ -9,14 +9,19 @@ class DatabaseConfig:
         'Trusted_Connection=yes;'
     )
 
+    testing = True
+
     @classmethod
     def get_connection(cls):
         return pyodbc.connect(cls.CONNECTION_STRING)
     
     @classmethod
     def insert_page(cls, db, query, page_count, url):
-        print('---------------------------------------------------------------------------------------------')
-        print('IN DE DATA')
+
+        if cls.testing:
+            print(f'DB in testing... inserting page {db} - {query} - {page_count} - {url}')
+            return 10
+        
         conn = cls.get_connection()
         cursor = conn.cursor()        
 
@@ -64,6 +69,9 @@ class DatabaseConfig:
     # TODO> Currently, the insertion from pages is done in the pipeline, probably better to move it here
     @classmethod
     def upsert_issue(cls, pairs, unique_value):
+        if cls.testing:
+            print(f'DB in testing upserting issue', pairs)
+            return
         """
         If it exists, updates,otherwise inserts
         """
@@ -106,6 +114,7 @@ class DatabaseConfig:
 
     @classmethod
     def get_all_unreached_issues_urls(cls,url_field, conditions):
+        
         conn = cls.get_connection()
         cursor = conn.cursor()
         try:
@@ -122,3 +131,33 @@ class DatabaseConfig:
             cursor.close()
             conn.close()
         return []
+
+    @classmethod
+    def insert_query_totals(cls, db, url, query, total_results):
+        if cls.testing:
+            print(f'db in testing... inserting query total {db} - {url} - {query} - {total_results}')
+            return
+        conn = cls.get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO Query_total_results 
+                (db, timestamp, url, query, total_results) 
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    db,
+                    datetime.now(),
+                    url,
+                    query,
+                    total_results
+                )
+            )
+            conn.commit()
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+

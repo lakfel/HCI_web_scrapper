@@ -35,7 +35,6 @@ class IeeepagesspiderSpider(scrapy.Spider):
         self.wait_timeout = 10
 
 
-    # TODO> Managing the rows
     def start_requests(self):
 
         # Verify parameters
@@ -43,7 +42,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
             self.logger.warning("No max pages, setting max to 45")
             self.max_pages = 45
         if not hasattr(self, 'rows_par_page') or self.rows_par_page == 0:
-            self.logger.warning("No max pages, setting max to 45")
+            self.logger.warning("No max rows_par_page, setting max to 100")
             self.rows_par_page = 100
 
         encoded_query = quote(self.query)

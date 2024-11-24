@@ -31,22 +31,25 @@ class SeleniumMiddleware:
 
     # TODO If needed the rotative headers must be done in the middleware
     def process_request(self, request, spider):
-        print('-----------Middleware Process')
-        
-        print('Middleware INIT')
-        chrome_options = Options()
-        #chrome_options.add_argument("--headless") 
-        chrome_options.add_argument("--disable-gpu")   # Improve in wondows
-        chrome_options.add_argument("--no-sandbox") 
-        #service = Service(f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe')  # Chrome driver path
-        service = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')  
 
-        spider.driver = webdriver.Chrome(
-            service=service,
-            options=chrome_options
-        )
-        # Attribute used in the spider to stablish if they will use or not Selenium
+
         if request.meta.get('use_selenium', False):
+            print('-----------Middleware Process')
+            
+            print('Middleware INIT')
+            chrome_options = Options()
+            #chrome_options.add_argument("--headless") 
+            chrome_options.add_argument("--disable-gpu")   # Improve in wondows
+            chrome_options.add_argument("--no-sandbox") 
+            #service = Service(f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe')  # Chrome driver path
+            service = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')  
+
+            spider.driver = webdriver.Chrome(
+                service=service,
+                options=chrome_options
+            )
+            # Attribute used in the spider to stablish if they will use or not Selenium
+        
             
             # If there is any specific selector for selenium to wait for it to be loaded
             key_selector = request.meta.get('key_selector', '')
@@ -71,6 +74,7 @@ class SeleniumMiddleware:
                 encoding='utf-8',
                 request=request
             )
+        print(f'----------------------------- Middleware retrninr NONE')
         return None  # Permite que Scrapy maneje la solicitud normalmente
 
     

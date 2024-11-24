@@ -30,10 +30,21 @@ class QueryPipeline:
     def open_spider(self, spider):
         spider.search_terms = self.search_terms
         spider.rows_per_page = self.rows_per_page 
-        if spider.db == 'IEEE':
+        
+        if spider.db == 'ACM':
+            or_groups = []
+            for group in self.search_terms:
+                or_groups.append(" OR ".join([f'(AllField:({term})' for term in group]))
+            spider.query = " AND ".join([f'({term})' for term in or_groups])
+        elif spider.db == 'IEEE':
             or_groups = []
             for group in self.search_terms:
                 or_groups.append(" OR ".join([f'("All Metadata":{term})' for term in group]))
+            spider.query = " AND ".join([f'({term})' for term in or_groups])
+        if spider.db == 'Springer':
+            or_groups = []
+            for group in self.search_terms:
+                or_groups.append(" OR ".join([f'"{term}"' for term in group]))
             spider.query = " AND ".join([f'({term})' for term in or_groups])
 
 class MSSQLPipeline:
@@ -47,14 +58,15 @@ class MSSQLPipeline:
         self.original_search_query = ''
         self.rows_par_page = 100
         # Testing params
-        self.is_testing = False
+        self.is_testing = True
         self.test_total_results = 100
         self.test_total_pages  = 2 
 
     # TODO store the initial total results query seems completely unnecesary
     def open_spider(self, spider):
-        self.conn = DatabaseConfig.get_connection()
-        self.cursor = self.conn.cursor()
+        if not self.is_testing:
+            self.conn = DatabaseConfig.get_connection()
+            self.cursor = self.conn.cursor()
         if spider.stype == 'Pages':
 
             if self.is_testing:
@@ -91,6 +103,8 @@ class MSSQLPipeline:
                     spider.documents = ['/doi/10.1145/3686215.3688380']
                 elif getattr(spider, 'db', 'ACM') == 'IEEE':
                     spider.documents = ['/document/10311503/']
+                elif getattr(spider, 'db', 'ACM') == 'Springer':
+                    spider.documents = ['/article/10.1007/s11831-022-09831-7']
                     return
             
             url_field = getattr(spider, 'url_field', 'doi')
