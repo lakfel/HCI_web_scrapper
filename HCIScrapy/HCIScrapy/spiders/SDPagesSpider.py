@@ -1,22 +1,20 @@
 import scrapy
 import time
 from HCIScrapy.database import DatabaseConfig
-import requests
 from bs4 import BeautifulSoup
 import re
 import math
 import random 
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
 
-class SpringerpagesSpider(scrapy.Spider):
-
-    # Spider's name
-    name = "springer_pages"
+class SdpagesspiderSpider(scrapy.Spider):
+    
+    name = "sd_pages"
 
     stype = 'Pages'
 
     # Database
-    db = 'Springer'
+    db = 'ScienceDirect'
 
     url_field = 'url'
 
@@ -24,12 +22,14 @@ class SpringerpagesSpider(scrapy.Spider):
     def __init__(self, db_param='', query_param='', *args, **kwargs):
         super().__init__(*args, **kwargs)
         
+        self.use_selenium = True
         self.db_param = db_param
         self.query_param = query_param
         self.total_results = 0
         self.max_pages = 50
         self.wait_timeout = 10
-        self.base_url = 'https://link.springer.com/search?new-search=true&query='
+        self.base_url = 'https://www.sciencedirect.com/search?qs='
+        self.js = {}
 
     def start_requests(self):
 
@@ -43,10 +43,11 @@ class SpringerpagesSpider(scrapy.Spider):
 
         base_search_url = f'{self.base_url}{quote(self.query)}'
         total_results = self.get_number_results(base_search_url)
+        print(f'Total results found {total_results}')
         DatabaseConfig.insert_query_totals(self.db, base_search_url, self.query, total_results)
 
         self.max_pages = math.ceil(total_results/self.rows_par_page)
-        self.max_pages = 2
+        self.max_pages = 0
         for page_count in range(1, self.max_pages + 1):
 
             search_url = f'{base_search_url}&page={page_count}'
@@ -104,15 +105,23 @@ class SpringerpagesSpider(scrapy.Spider):
 
 
     def get_number_results(self, base_search_url):
-        # I first check there is no initial query in the db 
-        response = requests.get(base_search_url, timeout=500)
-        response.raise_for_status() 
-        soup = BeautifulSoup(response.text, 'html.parser')
-        span = soup.find('span', {'data-test': 'results-data-total'})
+        print(base_search_url)
+        request_data = {
+                        'url' : base_search_url,
+                        'timeout' : 500,
+                        'token_to_wait' : 'span.search-body-results-text'
+                        }
+        
+        response = self.request(request_data)
+
+        #response.raise_for_status() 
+        soup = BeautifulSoup(response.body, 'html.parser')
+        span = soup.find('span', class_ = 'search-body-results-text')
         if not span:
             raise ValueError("Tag not found  -- data-test='results-data-total'.")
         span_text = span.get_text()
-        match = re.search(r"of ([\d,]+) results", span_text)
+
+        match = re.search(r"([\d,]+) results", span_text)
         if not match:
             raise ValueError(f"Tag format error. {span_text}")
         target_number = int(match.group(1).replace(",", ""))

@@ -86,7 +86,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
 
     def parse(self, response):
         try:
-            
+            self.use_selenium = True
             page_count = response.meta['page_count']
             query_id = response.meta['query_id']
             #with open("ieee_test.html", 'w') as file:

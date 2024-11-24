@@ -64,9 +64,9 @@ class SpringerissuesspiderSpider(scrapy.Spider):
             
             metrics = response.css('li.app-article-metrics-bar__item')
             for metric in metrics:
-                label = metric.css('.app-article-metrics-bar__label').xpath('.//text()').getall()
+                label = metric.css('.app-article-metrics-bar__label').xpath('.//text()').get()
                 if label:
-                    m_text = metric.css('.app-article-metrics-bar__count').xpath('.//text()').get()
+                    m_text = metric.css('.app-article-metrics-bar__count::text').get().strip()
                     if label == 'Accesses':
                         item['Downloads'] = ''.join(m_text).strip()
                     elif label == 'Citations':

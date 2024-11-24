@@ -8,13 +8,16 @@ from scrapy.http import HtmlResponse
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import requests
 import time
 
 class SeleniumMiddleware:
+
+    def __init__(self):
+        self.drivers = {}
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -26,31 +29,91 @@ class SeleniumMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+        if getattr(spider, 'use_selenium', False):
+            chrome_options = Options()
+            #chrome_options.add_argument("--headless") 
+            #chrome_options.add_argument("--disable-gpu")   # Improve in wondows
+            #chrome_options.add_argument("--no-sandbox")
+            #TODO This probably should go in settings
+            chrome_options.add_argument(f"user-data-dir=C:\\Users\\jfgon\\AppData\\Local\\Google\\Chrome\\User Data - BU")             
+            #chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            #chrome_options.add_experimental_option("useAutomationExtension", False)
+            #chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36")
 
+            #service = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')  
+            service = Service(f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe')  # Chrome driver path
+            self.drivers[spider.name] = webdriver.Chrome(
+                service=service,
+                options=chrome_options
+            )
+            spider.request = lambda request_data: self.request_selenium(request_data, spider)
+        else:
+            spider.request = lambda request_data: self.request_html(request_data, spider)
     
+
+    def request_html(self, request_data, spider):
+        if 'url' in request_data:
+            url = request_data['url']
+            timeout = 50
+            if 'timeout' in request_data:
+                timeout 
+            return requests.get(url, timeout=timeout)
+        else:
+            return None
+    
+    # TODO: Adapt IEEE issues to follow thisworkflow
+    def request_selenium(self, request_data, spider):
+
+
+        if spider.name not in self.drivers:
+            raise ValueError(f"There is no driver for the spider '{spider.name}'")
+
+        if 'url' not in request_data:
+            raise KeyError("Missing 'url' in request_data")
+        
+        url = request_data['url']
+        driver = self.drivers[spider.name]
+        
+        try:
+            driver.get(url)
+            
+            token_to_wait = request_data.get('token_to_wait')
+            if token_to_wait:
+                WebDriverWait(driver, 40).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, token_to_wait))
+                )
+
+            meta = request_data.get('meta', {})
+
+            if 'js' in request_data:
+                js_results = []
+                for js_name, js in request_data['js']:
+                    response = driver.execute_script(js)
+                    js_results.append((js_name, response))
+                meta['js'] = js_results
+
+            body = driver.page_source
+            response = HtmlResponse(
+                driver.current_url,
+                body=body,
+                encoding='utf-8',
+                request=None
+            )
+            response.replace(meta=meta)
+            return response
+        except Exception as e:
+            spider.logger.error(f"Error in request_selenium: {str(e)}")
+            return None
+
+        
 
     # TODO If needed the rotative headers must be done in the middleware
     def process_request(self, request, spider):
 
-
-        if request.meta.get('use_selenium', False):
-            print('-----------Middleware Process')
-            
+        if getattr(spider, 'use_selenium', False):
+                        
             print('Middleware INIT')
-            chrome_options = Options()
-            #chrome_options.add_argument("--headless") 
-            chrome_options.add_argument("--disable-gpu")   # Improve in wondows
-            chrome_options.add_argument("--no-sandbox") 
-            #service = Service(f'C:\\Users\\jfgon\\Documents\\Postodoc\\chromedriver-win64\\chromedriver.exe')  # Chrome driver path
-            service = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')  
 
-            spider.driver = webdriver.Chrome(
-                service=service,
-                options=chrome_options
-            )
-            # Attribute used in the spider to stablish if they will use or not Selenium
-        
-            
             # If there is any specific selector for selenium to wait for it to be loaded
             key_selector = request.meta.get('key_selector', '')
             spider.driver.get(request.url)
@@ -77,7 +140,11 @@ class SeleniumMiddleware:
         print(f'----------------------------- Middleware retrninr NONE')
         return None  # Permite que Scrapy maneje la solicitud normalmente
 
-    
+    def spider_closed(self, spider):
+        # Limpiar el driver cuando el spider termine
+        if spider.name in self.drivers:
+            self.drivers[spider.name].quit()
+            del self.drivers[spider.name]
 
 
 class HciscrapySpiderMiddleware:

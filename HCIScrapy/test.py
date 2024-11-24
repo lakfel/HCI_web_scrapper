@@ -10,7 +10,7 @@ def open_spider(search_terms, db):
     if db == 'ACM':
         or_groups = []
         for group in search_terms:
-            or_groups.append(" OR ".join([f'("AllField:(":{term})' for term in group]))
+            or_groups.append(" OR ".join([f'(AllField:({term})' for term in group]))
         return " AND ".join([f'({term})' for term in or_groups])
     elif db == 'IEEE':
         or_groups = []

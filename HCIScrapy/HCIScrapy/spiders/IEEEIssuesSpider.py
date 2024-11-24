@@ -23,7 +23,7 @@ class IeeeissuesspiderSpider(scrapy.Spider):
 
     def __init__(self, db_param='', query_param='', *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+        self.use_selenium = True
         self.db_param = db_param
         self.query_param = query_param
         self.total_results = 0
