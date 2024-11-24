@@ -27,9 +27,12 @@ class SdpagesspiderSpider(scrapy.Spider):
         self.query_param = query_param
         self.total_results = 0
         self.max_pages = 50
+        self.rows_par_page = 50 
         self.wait_timeout = 10
         self.base_url = 'https://www.sciencedirect.com/search?qs='
-        self.js = {}
+        self.js = {} # Dict key:name value: tuple ( statement, result)
+        #TODO adapt IEEE to this 
+        self.query_ids = {} # Temproraryy measure to pass the query to the parser. With selenium is not possbile.
 
     def start_requests(self):
 
@@ -47,42 +50,56 @@ class SdpagesspiderSpider(scrapy.Spider):
         DatabaseConfig.insert_query_totals(self.db, base_search_url, self.query, total_results)
 
         self.max_pages = math.ceil(total_results/self.rows_par_page)
-        self.max_pages = 0
+        self.max_pages = 1
         for page_count in range(1, self.max_pages + 1):
 
-            search_url = f'{base_search_url}&page={page_count}'
+            search_url = f'{base_search_url}&show={self.rows_par_page}&offset={((page_count-1)*self.rows_par_page)}'
+
+            #TODO This can be better generalized in order to add any type of storage
             query_id = DatabaseConfig.insert_page(self.db, self.query, page_count, search_url)
+            self.query_ids[search_url] = query_id
              #FIXME Currently working by disabling the robot.txt settings. Figure it out
+             #TODO IEEE works differently with the excecution of Js information. Adapt it to the current version
+            token_to_wait = 'li.ResultItem'
             yield scrapy.Request(
                 search_url,
                 meta = {
                         'page_count': page_count,
                         'query_id': query_id,
-                        'url': search_url
+                        'url': search_url,
+                        'token_to_wait' : token_to_wait
                         },
                 dont_filter=True,
                 callback=self.parse
             )
+
             time.sleep(random.uniform(4, 9))
+
+
 
     def parse(self, response):
 
-        print(f'----------------------------- Spider parsing')
 
-        query_id = response.meta['query_id']
-        soup = BeautifulSoup(response.text, 'html.parser')
+        query_id = self.query_ids[response.url]
+
+
+        with open("ieee_test.html", 'w') as file:
+            print(response.body,file=file)
+
+
         try:
+            print(f'----------------------------- Spider parsing')
 
-            li_results = response.css('li[data-test="search-result-item"]')
+            li_results = response.css('li.ResultItem')
             
             for li in li_results:
                 
-                stype = li.css('.c-meta__item').xpath('.//text()').get()
-                url = li.css('.app-card-open a::attr(href)').get()
-                title = li.css('.app-card-open__link > span').xpath('.//text()').get()
-                abstract_truncated_all = li.css('.app-card-open__description').xpath('.//text()').getall()
-                abstract_truncated = ''.join(abstract_truncated_all).strip()
-                date_str = li.css('span.c-meta__item[data-test="published"]').xpath('.//text()').get()
+                stype = li.css('.article-type').xpath('.//text()').get()
+                title_info = li.css('h2')
+                url = title_info.css('a.result-list-title-link::attr(href)').get()
+                title = title_info.css('.anchor-text > span').xpath('.//text()').get()
+                pub_info = li.css('.srctitle-date-fields')
+                venue = pub_info.css('.subtype-srctitle-link .anchor-text > span').xpath('.//text()').get()
 
                 item = { 'db' : self.db,  
                         'query_id' : query_id,
@@ -93,10 +110,8 @@ class SdpagesspiderSpider(scrapy.Spider):
                     item['title'] = title
                 if stype:
                     item['type'] = stype
-                if  abstract_truncated:
-                    item['abstract_truncated'] = abstract_truncated
-                if date_str:
-                    item['date'] = date_str
+                if  venue:
+                    item['venue'] = venue
 
                 yield item
         except Exception as e:
@@ -112,9 +127,8 @@ class SdpagesspiderSpider(scrapy.Spider):
                         'token_to_wait' : 'span.search-body-results-text'
                         }
         
-        response = self.request(request_data)
+        response, meta = self.request(request_data)
 
-        #response.raise_for_status() 
         soup = BeautifulSoup(response.body, 'html.parser')
         span = soup.find('span', class_ = 'search-body-results-text')
         if not span:

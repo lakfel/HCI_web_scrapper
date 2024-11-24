@@ -57,9 +57,9 @@ class SeleniumMiddleware:
             timeout = 50
             if 'timeout' in request_data:
                 timeout 
-            return requests.get(url, timeout=timeout)
+            return (requests.get(url, timeout=timeout), None)
         else:
-            return None
+            return (None,None)
     
     # TODO: Adapt IEEE issues to follow thisworkflow
     def request_selenium(self, request_data, spider):
@@ -82,14 +82,14 @@ class SeleniumMiddleware:
                 WebDriverWait(driver, 40).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, token_to_wait))
                 )
-
+            time.sleep(2)
             meta = request_data.get('meta', {})
 
             if 'js' in request_data:
-                js_results = []
+                js_results = {}
                 for js_name, js in request_data['js']:
                     response = driver.execute_script(js)
-                    js_results.append((js_name, response))
+                    js_results[js_name] = (js, response)
                 meta['js'] = js_results
 
             body = driver.page_source
@@ -99,11 +99,11 @@ class SeleniumMiddleware:
                 encoding='utf-8',
                 request=None
             )
-            response.replace(meta=meta)
-            return response
+            
+            return (response, meta)
         except Exception as e:
             spider.logger.error(f"Error in request_selenium: {str(e)}")
-            return None
+            return (None , None)
 
         
 
@@ -111,32 +111,15 @@ class SeleniumMiddleware:
     def process_request(self, request, spider):
 
         if getattr(spider, 'use_selenium', False):
-                        
-            print('Middleware INIT')
 
-            # If there is any specific selector for selenium to wait for it to be loaded
-            key_selector = request.meta.get('key_selector', '')
-            spider.driver.get(request.url)
-            if key_selector != '' :
-                WebDriverWait(spider.driver, 40).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, key_selector))
-                )
-            
-            time.sleep(2)
+            meta = request.meta
+            response, meta = self.request_selenium(meta, spider)
 
-            body = spider.driver.page_source
-            url = request.meta.get('url', '')
-            spider.metadata[url] = spider.driver.execute_script('return window.xplGlobal.document.metadata;')
-            #with open("ieee_test2.html", 'w',  encoding='ISO-8859-1') as file:
-            #    print(body,file=file)
-            
-           
-            return HtmlResponse(
-                spider.driver.current_url,
-                body=body,
-                encoding='utf-8',
-                request=request
-            )
+            if 'js' in meta:
+                spider.js = meta['js']
+
+           #TODO Adapt IEEE and test
+            return response
         print(f'----------------------------- Middleware retrninr NONE')
         return None  # Permite que Scrapy maneje la solicitud normalmente
 
