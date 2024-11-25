@@ -1,12 +1,11 @@
 import scrapy
 import time
 import random
-from dotenv import load_dotenv
-import os
+
 
 class SdissuesspiderSpider(scrapy.Spider):
     # Spider's name
-    name = "sd_issues"
+    name = "sd_issues_selenium"
 
     # Database 
     db = 'ScienceDirect'
@@ -18,34 +17,25 @@ class SdissuesspiderSpider(scrapy.Spider):
 
     def __init__(self, db_param='', query_param='', *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.use_api = True
-        load_dotenv()
-        self.API_KEY = os.getenv("SD_API_KEY")
+   
+        self.db_param = db_param
+        self.query_param = query_param
+        self.total_results = 0
+        self.max_pages = 0
         self.wait_timeout = 10
         self.metadata = {}
-        self.base_search_url = 'https://api.elsevier.com/content/search/sciencedirect'
+        self.base_url = 'https://link.springer.com'
 
 
     def start_requests(self):
 
+        
 
-        # Initial search
-        HEADERS = {
-            "X-ELS-APIKey": self.API_KEY,
-            "Accept": "application/json",  # Cambia a "text/xml, application/atom+xml" si prefieres XML
-        }
+        print(f' TOTAL Documents {len(self.documents)}')
 
-        params = {
-            "query" : self.query
-        }
-        request_data = {
-            "url" : self.base_search_url, 
-            "headers" : HEADERS,
-            "params" : params
-        }
-
-      
+        if not hasattr(self, 'documents'):
+            self.documents = []
+            self.logger.error('NO DOCUMENTS TO DOWNLOAD ')
 
         for url in self.documents:
 
@@ -98,8 +88,6 @@ class SdissuesspiderSpider(scrapy.Spider):
         
         except Exception as e:
             self.logger.error(f"Error en parse_search: {e}")
-
-
 
     
 

@@ -197,7 +197,7 @@ class MSSQLPipeline:
                         safe_str(item.get("abstract_truncated")),
                         safe_str(item.get("abstract")),
                         safe_str(item.get("status")),
-                        safe_int(item.get("query_id"), None),
+                        safe_int(item.get("id_query"), None),
                         safe_str(item.get("venue")),
                         safe_int(item.get("downloads"), 0),   # Usa 0 como predeterminado si no hay valor
                         safe_int(item.get("citations"), 0),

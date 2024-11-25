@@ -6,6 +6,8 @@ import re
 import math
 import random 
 from urllib.parse import quote
+from dotenv import load_dotenv
+import os
 
 class SdpagesspiderSpider(scrapy.Spider):
     
@@ -19,55 +21,62 @@ class SdpagesspiderSpider(scrapy.Spider):
     url_field = 'url'
 
 
-    def __init__(self, db_param='', query_param='', *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.use_selenium = True
-        self.db_param = db_param
-        self.query_param = query_param
+        self.use_api = True
+        load_dotenv()
+        self.use_selenium = False
+        self.API_KEY = os.getenv("SD_API_KEY")
+        self.use_api = True
         self.total_results = 0
         self.max_pages = 50
-        self.rows_par_page = 50 
+        self.rows_par_page = 100 
         self.wait_timeout = 10
-        self.base_url = 'https://www.sciencedirect.com/search?qs='
+        self.base_url = 'https://api.elsevier.com/content/search/sciencedirect'
         self.js = {} # Dict key:name value: tuple ( statement, result)
         #TODO adapt IEEE to this 
-        self.query_ids = {} # Temproraryy measure to pass the query to the parser. With selenium is not possbile.
+        self.ids_query = {} # Temprorary measure to pass the query to the parser. With selenium is not possbile.
 
     def start_requests(self):
 
-        # Starting in a number but it will be replaced in the first request
-        self.max_pages = 40
-        self.pages_is_set = False
+        HEADERS = {
+            "X-ELS-APIKey": self.API_KEY,
+            "Accept": "application/json",  # Cambia a "text/xml, application/atom+xml" si prefieres XML
+        }
+        params = {
+            "query" : self.query
+        }
+        request_data = {
+            "url" : self.base_url, 
+            "headers" : HEADERS,
+            "params" : params,
+            "sort" : "relevance"
+        }
+        
+        self.total_results = self.get_number_results(request_data)
+        print(f'TOTAL RESULTS {self.total_results}')
 
-        if not hasattr(self, 'rows_par_page') or self.rows_par_page == 0:
-            self.logger.warning("No max rows_par_page, setting max to 100")
-            self.rows_par_page = 100
+        DatabaseConfig.insert_query_totals(self.db, self.base_url, self.query, self.total_results)
+        request_data['count'] = self.rows_par_page
+        self.max_pages = math.ceil(self.total_results/self.rows_par_page)
+        self.max_pages = 2
 
-        base_search_url = f'{self.base_url}{quote(self.query)}'
-        total_results = self.get_number_results(base_search_url)
-        print(f'Total results found {total_results}')
-        DatabaseConfig.insert_query_totals(self.db, base_search_url, self.query, total_results)
-
-        self.max_pages = math.ceil(total_results/self.rows_par_page)
-        self.max_pages = 1
         for page_count in range(1, self.max_pages + 1):
+            
+            request_data_tempo = request_data.copy()
+            #params_tempo["start"] = (page_count - 1) * self.rows_par_page
+            request_data_tempo['params']["start"] = (page_count - 1) * 6500
 
-            search_url = f'{base_search_url}&show={self.rows_par_page}&offset={((page_count-1)*self.rows_par_page)}'
 
             #TODO This can be better generalized in order to add any type of storage
-            query_id = DatabaseConfig.insert_page(self.db, self.query, page_count, search_url)
-            self.query_ids[search_url] = query_id
-             #FIXME Currently working by disabling the robot.txt settings. Figure it out
-             #TODO IEEE works differently with the excecution of Js information. Adapt it to the current version
-            token_to_wait = 'li.ResultItem'
+            id_query = DatabaseConfig.insert_page(self.db, self.query, page_count, f'{self.query}-{page_count}')
+            self.ids_query[f'{self.query}-{page_count}'] = id_query
+
             yield scrapy.Request(
-                search_url,
+                self.base_url,
                 meta = {
-                        'page_count': page_count,
-                        'query_id': query_id,
-                        'url': search_url,
-                        'token_to_wait' : token_to_wait
+                        'request_data': request_data_tempo 
                         },
                 dont_filter=True,
                 callback=self.parse
@@ -77,66 +86,19 @@ class SdpagesspiderSpider(scrapy.Spider):
 
 
 
-    def parse(self, response):
+    def parse(self, responseHtml):
+        id_query = self.ids_query[responseHtml.url]
+        response = responseHtml.json()
+        print(f'GOT THE JSON..? {id_query} --- {response}' )
 
 
-        query_id = self.query_ids[response.url]
 
+    def get_number_results(self, request_data):
 
-        with open("ieee_test.html", 'w') as file:
-            print(response.body,file=file)
-
-
-        try:
-            print(f'----------------------------- Spider parsing')
-
-            li_results = response.css('li.ResultItem')
-            
-            for li in li_results:
-                
-                stype = li.css('.article-type').xpath('.//text()').get()
-                title_info = li.css('h2')
-                url = title_info.css('a.result-list-title-link::attr(href)').get()
-                title = title_info.css('.anchor-text > span').xpath('.//text()').get()
-                pub_info = li.css('.srctitle-date-fields')
-                venue = pub_info.css('.subtype-srctitle-link .anchor-text > span').xpath('.//text()').get()
-
-                item = { 'db' : self.db,  
-                        'query_id' : query_id,
-                        'url' : url,
-                        'unique_id' : 'url'
-                        }
-                if title:
-                    item['title'] = title
-                if stype:
-                    item['type'] = stype
-                if  venue:
-                    item['venue'] = venue
-
-                yield item
-        except Exception as e:
-            self.logger.error(f"Error en parse_search: {e}")
-        
-
-
-    def get_number_results(self, base_search_url):
-        print(base_search_url)
-        request_data = {
-                        'url' : base_search_url,
-                        'timeout' : 500,
-                        'token_to_wait' : 'span.search-body-results-text'
-                        }
-        
-        response, meta = self.request(request_data)
-
-        soup = BeautifulSoup(response.body, 'html.parser')
-        span = soup.find('span', class_ = 'search-body-results-text')
-        if not span:
-            raise ValueError("Tag not found  -- data-test='results-data-total'.")
-        span_text = span.get_text()
-
-        match = re.search(r"([\d,]+) results", span_text)
-        if not match:
-            raise ValueError(f"Tag format error. {span_text}")
-        target_number = int(match.group(1).replace(",", ""))
-        return target_number
+        responseHTML, meta = self.request(request_data)
+        response = responseHTML.json()
+        if 'search-results' in response:
+            search_results = response['search-results']
+            if 'opensearch:totalResults' in search_results :
+                return int(search_results['opensearch:totalResults'])
+        return 0

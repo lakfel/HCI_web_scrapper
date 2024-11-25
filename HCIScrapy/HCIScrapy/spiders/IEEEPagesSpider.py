@@ -67,7 +67,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
             search_url = f"{self.base_url}?queryText={encoded_query}&pageNumber={page_number}&rowsPerPage={self.rows_par_page}"
             
             print(f'STORING -- {self.db}, {self.query},{page_number}, {search_url}')
-            query_id = DatabaseConfig.insert_page(self.db, self.query,page_number, search_url)
+            id_query = DatabaseConfig.insert_page(self.db, self.query,page_number, search_url)
 
             yield scrapy.Request(
                 search_url, 
@@ -76,7 +76,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
                 meta={'use_selenium': True, 
                     'key_selector' : 'div.result-item-align',
                     'page_count': page_number,
-                    'query_id': query_id},
+                    'id_query': id_query},
                 dont_filter=True
             )
 
@@ -88,7 +88,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
         try:
             self.use_selenium = True
             page_count = response.meta['page_count']
-            query_id = response.meta['query_id']
+            id_query = response.meta['id_query']
             #with open("ieee_test.html", 'w') as file:
             #    print(response.text,file=file)
             results = response.css('div.result-item-align')
@@ -108,7 +108,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
                     'type' : type_issue,
                     'venue' : venue,
                     'url' : url,
-                    'query_id' : query_id,
+                    'id_query' : id_query,
                     'unique_id' : 'url'
                     # Añade más campos según necesites
                 }

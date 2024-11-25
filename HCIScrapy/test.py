@@ -79,87 +79,23 @@ search_terms = [
                 ["Multiuser", "multi-user", "collaborative"]  
             ]
         
-print(open_spider(search_terms=search_terms, db='ACM'))
-print(open_spider(search_terms=search_terms, db='IEEE'))
-print(open_spider(search_terms=search_terms, db='Springer'))
+#print(open_spider(search_terms=search_terms, db='ACM'))
+#print(open_spider(search_terms=search_terms, db='IEEE'))
+#print(open_spider(search_terms=search_terms, db='Springer'))
 
 
 
 #search_css_in_folder(f'C:\\Users\\johannavila\\Documents\\Research\\Multiuser CVE Survey paper\\Scripts\\HCIScrapy\\ieee_types','.stats-document-abstract-doi')
-"""
+""
 # Cargar el archivo HTML local
 with open('C:\\Users\\johannavila\\Documents\\Research\\Multiuser CVE Survey paper\\Scripts\\HCIScrapy\\ieee_test.html', 'r', encoding='ISO-8859-1') as f:
     html_content = f.read()
 
 # Crear un objeto de respuesta tipo Scrapy
 response = HtmlResponse(url='http://example.com', body=html_content, encoding='ISO-8859-1')
-#title = response.css('.document-title span').xpath('.//text()').get()
-#printV(title)
-#doi = response.css('meta.stats-document-abstract-doi a').xpath('.//text()').get()
-doi = response.css('meta[scheme="doi"]::attr(content)').get()
-print(doi)
-date_str = response.css('.doc-abstract-pubdate').xpath('normalize-space(text())').get().strip()
-printV(date_str)
-date_info = date_str.split()
-date_day = date_info[0]
-printV(date_day)
-date_month = date_info[1]
-printV(date_month)
-date_year = date_info[2]
-printV(date_year)
-abstract_t = response.css('.abstract-text').xpath('.//text()').getall()
-abstract = ''.join(abstract_t).strip()
-printV(abstract)
-metrics = response.css('div.document-banner-metric-count')
-citations = metrics[0].xpath('.//text()').get()
-printV(citations)
-downloads = metrics[1].xpath('.//text()').get()
-printV(downloads)
-comments = 'Downloads refer to full text views'
-printV(comments)
-"""
 
-
-
-
-
-""" 
-            stype = response.xpath('//meta[@name="parsely-type"]/@content').get()
-            title = response.xpath('//meta[@name="parsely-type"]/@content').get().split('|')[0].strip()
-
-
-
-            #title = response.css('.document-title span').xpath('.//text()').get()
-            doi = response.css('.stats-document-abstract-doi a').xpath('.//text()').get()
-
-            date_str = response.css('.doc-abstract-pubdate').xpath('normalize-space(text())').get().strip()
-            date_info = date_str.split()
-            date_day = date_info[0]
-            date_month = date_info[1]
-            date_year = date_info[2]
-            abstract_t = response.css('.abstract-text').xpath('.//text()').getall()
-            abstract = ''.join(abstract_t).strip()
-            metrics = response.css('div.document-banner-metric-count')
-            citations = metrics[0].xpath('.//text()').get()
-            downloads = metrics[1].xpath('.//text()').get()
-            comments = 'Downloads refer to full text views'
-            url = response.meta['url']
-
-                    
-            yield {
-                'db' : self.db,
-                'title': title,
-                'doi' : doi,
-                'date' : date_str,
-                'date_day' : int(date_day),
-                'date_month' : date_month,
-                'date_year' : int(date_year),
-                'abstract' : abstract,
-                'status' : 'OK',
-                'comments' : comments,
-                'citations' : int(citations),
-                'downloads' : int(downloads),
-                'url' : url,
-                # Añade más campos según necesites
-            }
-            """
+abstract_a = response.css('section[data-title="Abstract"]').xpath('.//text()').getall()
+abstract = ''.join(abstract_a).strip()
+print(abstract)
+    
+            

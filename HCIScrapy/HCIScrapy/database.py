@@ -9,7 +9,7 @@ class DatabaseConfig:
         'Trusted_Connection=yes;'
     )
 
-    testing = True
+    testing = False
 
     @classmethod
     def get_connection(cls):
@@ -90,6 +90,7 @@ class DatabaseConfig:
                 set_clause = ", ".join([f"{field} = ?" for field, _ in pairs])
                 values = [value for _, value in pairs]
                 query = f"UPDATE issues SET {set_clause} WHERE {field_to_check} = ?"
+                print(query, *values, value_to_check)
                 cursor.execute(query, *values, value_to_check)
                 print(f"Updated \n\t\t {query} ... {field_to_check} = {value_to_check}")
             else:
@@ -100,6 +101,7 @@ class DatabaseConfig:
                 #values.append(value_to_check)
                 placeholders = ", ".join(["?"] * len(fields))
                 query = f"INSERT INTO issues ({', '.join(fields)}) VALUES ({placeholders})"
+                print(query, *values)
                 cursor.execute(query, *values)
                 print("Inserted")
             

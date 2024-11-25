@@ -27,48 +27,47 @@ class SpringerpagesSpider(scrapy.Spider):
         self.db_param = db_param
         self.query_param = query_param
         self.total_results = 0
+        self.rows_par_page = 20
         self.max_pages = 50
+        self.max_results = 1000
         self.wait_timeout = 10
         self.base_url = 'https://link.springer.com/search?new-search=true&query='
 
     def start_requests(self):
 
         # Starting in a number but it will be replaced in the first request
-        self.max_pages = 40
+        
         self.pages_is_set = False
-
-        if not hasattr(self, 'rows_par_page') or self.rows_par_page == 0:
-            self.logger.warning("No max rows_par_page, setting max to 100")
-            self.rows_par_page = 100
 
         base_search_url = f'{self.base_url}{quote(self.query)}'
         total_results = self.get_number_results(base_search_url)
         DatabaseConfig.insert_query_totals(self.db, base_search_url, self.query, total_results)
 
-        self.max_pages = math.ceil(total_results/self.rows_par_page)
-        self.max_pages = 2
+        self.max_pages = min(math.ceil(total_results/self.rows_par_page), self.max_pages)
+        #self.max_pages = 1
+        print(f'{self.name} -- TOTAL PAGES = {self.max_pages}')
         for page_count in range(1, self.max_pages + 1):
 
             search_url = f'{base_search_url}&page={page_count}'
-            query_id = DatabaseConfig.insert_page(self.db, self.query, page_count, search_url)
+            id_query = DatabaseConfig.insert_page(self.db, self.query, page_count, search_url)
              #FIXME Currently working by disabling the robot.txt settings. Figure it out
             yield scrapy.Request(
                 search_url,
                 meta = {
                         'page_count': page_count,
-                        'query_id': query_id,
+                        'id_query': id_query,
                         'url': search_url
                         },
                 dont_filter=True,
                 callback=self.parse
             )
-            time.sleep(random.uniform(4, 9))
+            time.sleep(random.uniform(6, 15))
 
     def parse(self, response):
 
         print(f'----------------------------- Spider parsing')
 
-        query_id = response.meta['query_id']
+        id_query = response.meta['id_query']
         soup = BeautifulSoup(response.text, 'html.parser')
         try:
 
@@ -76,7 +75,7 @@ class SpringerpagesSpider(scrapy.Spider):
             
             for li in li_results:
                 
-                stype = li.css('.c-meta__item').xpath('.//text()').get()
+                stype = li.css('.c-meta__item').xpath('.//text()').get() # This is not working
                 url = li.css('.app-card-open a::attr(href)').get()
                 title = li.css('.app-card-open__link > span').xpath('.//text()').get()
                 abstract_truncated_all = li.css('.app-card-open__description').xpath('.//text()').getall()
@@ -84,9 +83,9 @@ class SpringerpagesSpider(scrapy.Spider):
                 date_str = li.css('span.c-meta__item[data-test="published"]').xpath('.//text()').get()
 
                 item = { 'db' : self.db,  
-                        'query_id' : query_id,
+                        'id_query' : id_query,
                         'url' : url,
-                        'unique_id' : 'url'
+                        #'unique_id' : 'url'
                         }
                 if title:
                     item['title'] = title

@@ -31,13 +31,13 @@ def insert_data_query(query: str, page_count: str, url: str, timestamp : datetim
             
             # Retrieve the auto-incremented Id of the inserted row
             #   cursor.execute("SELECT SCOPE_IDENTITY()")
-            query_id = cursor.fetchone()[0]
+            id_query = cursor.fetchone()[0]
             
             # Commit the transaction
             connection.commit()
             
             # Return the auto-incremented Id
-            return int(query_id)
+            return int(id_query)
 
         except pyodbc.Error as e:
             print("Error inserting query data:", e)

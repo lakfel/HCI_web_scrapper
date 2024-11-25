@@ -41,7 +41,7 @@ class QueryPipeline:
             for group in self.search_terms:
                 or_groups.append(" OR ".join([f'("All Metadata":{term})' for term in group]))
             spider.query = " AND ".join([f'({term})' for term in or_groups])
-        if spider.db == 'Springer' or spider.db == 'ScienceDirect':
+        elif spider.db == 'Springer' or spider.db == 'ScienceDirect':
             or_groups = []
             for group in self.search_terms:
                 or_groups.append(" OR ".join([f'"{term}"' for term in group]))
@@ -90,8 +90,8 @@ class MSSQLPipeline:
                 self.max_pages = math.ceil(self.total_results / self.rows_par_page)
                 
                 spider.total_results = self.total_results"""
-                spider.max_pages = self.max_pages
-                spider.rows_par_page = self.rows_par_page
+                #spider.max_pages = self.max_pages
+                #spider.rows_par_page = self.rows_par_page
 
             except Exception as e:
                 spider.logger.error(f"Error en open_spider: {e}")
@@ -141,6 +141,7 @@ class MSSQLPipeline:
             pairs = [(field, value) for field, value in item.items()]
             url_field_name = getattr(spider, 'url_field')
             url_field = item.get(url_field_name)
+
             DatabaseConfig.upsert_issue(pairs, (url_field_name, url_field))
         return item
 

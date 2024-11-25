@@ -49,17 +49,33 @@ class SeleniumMiddleware:
             spider.request = lambda request_data: self.request_selenium(request_data, spider)
         else:
             spider.request = lambda request_data: self.request_html(request_data, spider)
+        
     
 
     def request_html(self, request_data, spider):
         if 'url' in request_data:
+            print(f'REQUESTING HTML ', request_data)
             url = request_data['url']
             timeout = 50
+            params = {}
+            headers = {}
             if 'timeout' in request_data:
-                timeout 
-            return (requests.get(url, timeout=timeout), None)
-        else:
-            return (None,None)
+                timeout =   request_data['timeout']
+            if 'params' in request_data:
+                params =   request_data['params']
+            if 'headers' in request_data:
+                headers =   request_data['headers']
+
+            htmlResponse = requests.get(url, timeout=timeout, params=params, headers=headers)
+            response = HtmlResponse(
+                url,
+                body=htmlResponse,
+                encoding='utf-8',
+                request=None
+            )
+            return (response, None)
+        
+        return (None,None)
     
     # TODO: Adapt IEEE issues to follow thisworkflow
     def request_selenium(self, request_data, spider):
@@ -120,7 +136,15 @@ class SeleniumMiddleware:
 
            #TODO Adapt IEEE and test
             return response
-        print(f'----------------------------- Middleware retrninr NONE')
+        elif getattr(spider, 'use_api', False): 
+            meta = request.meta
+            if 'request_data' in meta:
+                request_data = meta['request_data']
+                print(f'TRYING THE HTML {request_data}')
+                response, meta = self.request_html(request_data, spider)
+                print(f'RETURNING THE HTML {response} -- {request_data}')
+                return response
+            return None
         return None  # Permite que Scrapy maneje la solicitud normalmente
 
     def spider_closed(self, spider):

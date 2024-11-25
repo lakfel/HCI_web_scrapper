@@ -48,7 +48,7 @@ class SpringerissuesspiderSpider(scrapy.Spider):
                 dont_filter=True
             )
 
-            time.sleep(random.uniform(4, 9))
+            time.sleep(random.uniform(6, 9))
 
 
 
@@ -71,7 +71,8 @@ class SpringerissuesspiderSpider(scrapy.Spider):
                         item['Downloads'] = ''.join(m_text).strip()
                     elif label == 'Citations':
                         item['Citations'] = ''.join(m_text).strip()
-            abstract = response.css('meta[name="citation_abstract"]::attr(content)').get()
+            abstract_a = response.css('section[data-title="Abstract"]').xpath('.//text()').getall()
+            abstract = ''.join(abstract_a).strip()
             if abstract:
                 item['abstract'] = abstract
             title = response.css('meta[name="citation_title"]::attr(content)').get()
@@ -83,6 +84,7 @@ class SpringerissuesspiderSpider(scrapy.Spider):
             comments =  response.css('meta[property="og:type"]::attr(content)').get()
             if comments:
                 item['comments'] = comments
+                item['type'] = comments
 
             yield item
         
