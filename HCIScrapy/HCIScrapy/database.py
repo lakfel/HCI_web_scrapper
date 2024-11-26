@@ -1,5 +1,6 @@
 import pyodbc
 from datetime import datetime
+from HCIScrapy.config import STORAGE_TEST
 
 class DatabaseConfig:
     CONNECTION_STRING = (
@@ -9,10 +10,12 @@ class DatabaseConfig:
         'Trusted_Connection=yes;'
     )
 
-    testing = False
+    testing = STORAGE_TEST
 
     @classmethod
     def get_connection(cls):
+        if cls.testing:
+            return None
         return pyodbc.connect(cls.CONNECTION_STRING)
     
     @classmethod
@@ -117,6 +120,9 @@ class DatabaseConfig:
     @classmethod
     def get_all_unreached_issues_urls(cls,url_field, conditions):
         
+        if cls.testing:
+            return []
+
         conn = cls.get_connection()
         cursor = conn.cursor()
         try:

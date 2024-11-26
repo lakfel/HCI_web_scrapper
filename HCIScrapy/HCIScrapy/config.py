@@ -1,0 +1,3 @@
+STORAGE_TEST = True  
+REQUEST_TEST = False 
+SCRAPPING_TEST = False  

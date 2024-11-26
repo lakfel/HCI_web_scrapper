@@ -5,6 +5,7 @@
 
 from scrapy import signals
 from scrapy.http import HtmlResponse
+from scrapy.http import TextResponse
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -66,10 +67,10 @@ class SeleniumMiddleware:
             if 'headers' in request_data:
                 headers =   request_data['headers']
 
-            htmlResponse = requests.get(url, timeout=timeout, params=params, headers=headers)
-            response = HtmlResponse(
+            api_response = requests.get(url, timeout=timeout, params=params, headers=headers)
+            response = TextResponse(
                 url,
-                body=htmlResponse,
+                body= api_response.text,
                 encoding='utf-8',
                 request=None
             )
@@ -142,7 +143,16 @@ class SeleniumMiddleware:
                 request_data = meta['request_data']
                 print(f'TRYING THE HTML {request_data}')
                 response, meta = self.request_html(request_data, spider)
-                print(f'RETURNING THE HTML {response} -- {request_data}')
+                #print(f'RETURNING THE HTML {response} -- {request_data}')
+                query = request_data['params']['query']
+                show = request_data['params']['start']
+                #spider.meta[f'{query}-{show}'] = 
+                response = TextResponse(
+                    request_data['url'],
+                    body=response.text,
+                    encoding='utf-8',
+                    request=None
+                )
                 return response
             return None
         return None  # Permite que Scrapy maneje la solicitud normalmente

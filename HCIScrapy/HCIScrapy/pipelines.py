@@ -8,7 +8,7 @@
 
 from HCIScrapy.database import DatabaseConfig
 from datetime import datetime
-import math
+from HCIScrapy.config import STORAGE_TEST
 
 class HciscrapyPipeline:
     def process_item(self, item, spider):
@@ -58,7 +58,7 @@ class MSSQLPipeline:
         self.original_search_query = ''
         self.rows_par_page = 100
         # Testing params
-        self.is_testing = True
+        self.is_testing = STORAGE_TEST
         self.test_total_results = 100
         self.test_total_pages  = 2 
 
@@ -106,7 +106,9 @@ class MSSQLPipeline:
                     spider.documents = ['/document/10311503/']
                 elif getattr(spider, 'db', 'ACM') == 'Springer':
                     spider.documents = ['/article/10.1007/s11831-022-09831-7']
-                    return
+                elif getattr(spider, 'db', 'ACM') == 'Springer':
+                    spider.documents = ['/article/10.1007/s11831-022-09831-7']
+                return
             
             spider.rows_par_page = 100
             url_field = getattr(spider, 'url_field', 'doi')

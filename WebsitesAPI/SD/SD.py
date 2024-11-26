@@ -1,9 +1,13 @@
 import requests
-from settings import SD_KEY
 
+from dotenv import load_dotenv
+import os
+load_dotenv()
+API_KEY = os.getenv("SD_API_KEY")
+print(API_KEY)
 BASE_URL = "http://api.elsevier.com"
 HEADERS = {
-    "X-ELS-APIKey": SD_KEY,
+    "X-ELS-APIKey": API_KEY,
     "Accept": "application/json",  # Cambia a "text/xml, application/atom+xml" si prefieres XML
 }
 
@@ -60,24 +64,31 @@ params = {
     "query": '("VR" OR "Virtual reality" OR "augmented reality" OR "AR" OR "mixed reality" OR "XR") AND ("Multiuser" OR "multi-user" OR "collaborative")',
 
 }
+response=requests.get(url=f'http://api.elsevier.com/authenticate?platform=sciencedirect', headers=HEADERS)
+
+if response.status_code == 200:
+    print(response.json())  # Procesar los resultados
+else:
+    print(f"Error {response.status_code}: {response.text}")
+
+
 response=requests.get(url=f'https://api.elsevier.com/content/search/sciencedirect', headers=HEADERS, params=params)
 
 if response.status_code == 200:
     print(response.json())  # Procesar los resultados
 else:
     print(f"Error {response.status_code}: {response.text}")
-# Uso de la clase
-if __name__ == "__main__" or False:
-    api_client = ElsevierAPI()
 
-    # Paso 1: Obtener authtoken
-    authtoken = api_client.get_auth_token()
-    if not authtoken:
-        print("Selecciona un choice ID de la lista anterior y vuelve a intentar.")
-        choice_id = input("Ingresa el choice ID: ")
-        authtoken = api_client.get_auth_token(choice_id=choice_id)
 
-    # Paso 2: Hacer solicitudes a contenido, e.g., búsqueda en Scopus
-    query_params = {"query": "heart"}
-    response = api_client.make_request("/content/search/scopus", params=query_params)
-    print("Resultados:", response)
+
+
+response=requests.get(url=f'http://api.elsevier.com/content/search/sciencedirect?query=heart&apiKey=[{API_KEY}] ')
+
+if response.status_code == 200:
+    print(response.json())  # Procesar los resultados
+else:
+    print(f"Error {response.status_code}: {response.text}")
+
+
+
+
