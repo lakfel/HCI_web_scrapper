@@ -3,6 +3,8 @@ import time
 import random
 from dotenv import load_dotenv
 import os
+import json
+
 
 class SdissuesspiderSpider(scrapy.Spider):
     # Spider's name
@@ -14,7 +16,7 @@ class SdissuesspiderSpider(scrapy.Spider):
     # Spider's type [Results, Page, Issues]
     stype = 'Issues'
     
-    url_field = 'url'
+    url_field = 'doi'
 
     def __init__(self, db_param='', query_param='', *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,7 +26,7 @@ class SdissuesspiderSpider(scrapy.Spider):
         self.API_KEY = os.getenv("SD_API_KEY")
         self.wait_timeout = 10
         self.metadata = {}
-        self.base_search_url = 'https://api.elsevier.com/content/search/sciencedirect'
+        self.base_search_url = 'https://api.elsevier.com/content/metadata/article'
 
 
     def start_requests(self):
@@ -36,26 +38,37 @@ class SdissuesspiderSpider(scrapy.Spider):
             "Accept": "application/json",  # Cambia a "text/xml, application/atom+xml" si prefieres XML
         }
 
-        params = {
-            "query" : self.query
-        }
+
         request_data = {
             "url" : self.base_search_url, 
             "headers" : HEADERS,
-            "params" : params
+            
         }
 
-      
+        
+        while len(self.documents) > 0:
+            dois = []
+            for i in range(min(70, len(self.documents))):
+                dois.append(self.documents.pop(0))
 
-        for url in self.documents:
-
-            search_url = f"{self.base_url}{url}"
-            print(f'SEARCHING-- {self.db}, {search_url}')
+            query = ' OR '.join([f'doi({doi})' for doi in dois])
+            #print(query)
+            params = {
+                'query' : query,
+                'view' : 'COMPLETE'
+            }   
+            request_data_tempo = request_data.copy()
+            request_data_tempo['params'] = params
+            #search_url = f"{self.base_url}{url}"
+            #print(f'SEARCHING-- {self.db}, {doi}')
         
             yield scrapy.Request(
-                search_url, 
-                meta={'url': url},
-                dont_filter=True
+                self.base_search_url,
+                meta = {
+                        'request_data': request_data_tempo 
+                        },
+                dont_filter=True,
+                callback=self.parse
             )
 
             time.sleep(random.uniform(4, 9))
@@ -63,43 +76,44 @@ class SdissuesspiderSpider(scrapy.Spider):
 
 
     def parse(self, response):
-        try:
-            #with open("ieee_test.html", 'w') as file:
-            #    print(response.text.encode("utf-8"),file=file)
-            #with open("ieee_test_meta.js", 'w') as file:
-            #    print(self.metadata,file=file)                
-            
-            url = response.meta['url']
-            item = {'db' : self.db, 'url' : url, 'status' : 'OK', }
-            
-            metrics = response.css('li.app-article-metrics-bar__item')
-            for metric in metrics:
-                label = metric.css('.app-article-metrics-bar__label').xpath('.//text()').get()
-                if label:
-                    m_text = metric.css('.app-article-metrics-bar__count::text').get().strip()
-                    if label == 'Accesses':
-                        item['Downloads'] = ''.join(m_text).strip()
-                    elif label == 'Citations':
-                        item['Citations'] = ''.join(m_text).strip()
-            abstract = response.css('meta[name="citation_abstract"]::attr(content)').get()
-            if abstract:
-                item['abstract'] = abstract
-            title = response.css('meta[name="citation_title"]::attr(content)').get()
-            if title:
-                item['title'] = title
-            doi = response.css('meta[name="DOI"]::attr(content)').get()
-            if doi:
-                item['doi'] = doi
-            comments =  response.css('meta[property="og:type"]::attr(content)').get()
-            if comments:
-                item['comments'] = comments
-
-            yield item
+        data = json.loads(response.text)
+        #print(f'Got article {data}')
+        search_results = data['search-results']
         
-        except Exception as e:
-            self.logger.error(f"Error en parse_search: {e}")
+        results = int(search_results['opensearch:totalResults'])
+        doit = search_results['opensearch:Query']['@searchTerms']
+        if results == 0:
+            print(f'DOI NOT FOUND {doit[2:-1]}')
+            yield {
+                'db' : self.db,  
+                'doi' :doit[2:-1],
+                'comments' : 'DOI NOT FOUND',
+                'status' :'Not Found'
+            }
+        else:
+            
+            for entry in search_results['entry']:
+                #print(entry)
+                doi = entry['prism:doi']
+                if doi:
+                    item = {
+                        'db' : self.db,
+                        'doi' : doi,
+                        'status' : 'OK', 
+                        }
+                    
+                    if 'dc:description' in entry:
+                        item['abstract'] = entry['dc:description']
+                    elif 'prism:teaser' in entry:
+                        item['abstract'] = entry['prism:teaser']
+                    
+                    if 'prism:aggregationType' in entry:
+                        item['comments'] = entry['prism:aggregationType']
 
+                    if 'pubType' in entry:
+                        item['type'] = entry['pubType']
 
-
-    
+                    yield item
+                else:
+                    print(f'NOT RESULTS WITH {doit} --- {data}')
 

@@ -55,7 +55,7 @@ class SeleniumMiddleware:
 
     def request_html(self, request_data, spider):
         if 'url' in request_data:
-            print(f'REQUESTING HTML ', request_data)
+            #print(f'REQUESTING HTML ', request_data)
             url = request_data['url']
             timeout = 50
             params = {}
@@ -141,11 +141,11 @@ class SeleniumMiddleware:
             meta = request.meta
             if 'request_data' in meta:
                 request_data = meta['request_data']
-                print(f'TRYING THE HTML {request_data}')
+                #print(f'TRYING THE HTML {request_data}')
                 response, meta = self.request_html(request_data, spider)
                 #print(f'RETURNING THE HTML {response} -- {request_data}')
-                query = request_data['params']['query']
-                show = request_data['params']['start']
+                #query = request_data['params']['query']
+                #show = request_data['params']['start']
                 #spider.meta[f'{query}-{show}'] = 
                 response = TextResponse(
                     request_data['url'],

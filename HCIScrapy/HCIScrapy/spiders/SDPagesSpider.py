@@ -16,7 +16,7 @@ class SdpagesspiderSpider(scrapy.Spider):
     # Database
     db = 'ScienceDirect'
 
-    url_field = 'url'
+    url_field = 'doi'
 
 
     def __init__(self, *args, **kwargs):
@@ -26,6 +26,8 @@ class SdpagesspiderSpider(scrapy.Spider):
         load_dotenv()
         self.use_selenium = False
         self.API_KEY = os.getenv("SD_API_KEY")
+        print(f'SPIDER KEY {self.API_KEY}')
+
         self.use_api = True
         self.total_results = 0
         self.max_results = 6000
@@ -60,7 +62,7 @@ class SdpagesspiderSpider(scrapy.Spider):
         request_data['count'] = self.rows_par_page
         self.max_pages = min(math.ceil(self.total_results/self.rows_par_page),math.ceil(self.max_results/self.rows_par_page))
         
-        self.max_pages = 2
+        #self.max_pages = 2
 
         for page_count in range(1, self.max_pages + 1):
             
@@ -83,18 +85,32 @@ class SdpagesspiderSpider(scrapy.Spider):
                 callback=self.parse
             )
 
-            time.sleep(random.uniform(4, 9))
+            time.sleep(random.uniform(2, 5))
 
 
 
     def parse(self, response):
         #id_query = self.ids_query[responseHtml.url]
         data = json.loads(response.text)
-        
-        print(f'GOT THE JSON..?  --- {data}' )
         search_results = data['search-results']
-
-
+        start = search_results['opensearch:startIndex']
+        id_query = self.ids_query[start]
+        #print(f'GOT THE JSON..?  --- start at {start}' )
+        for entry in search_results['entry']:
+            url = entry['prism:url']
+            title = entry['dc:title']
+            venue = entry['prism:publicationName']
+            doi = entry['prism:doi']
+            date = entry ['prism:coverDate']
+            yield {
+                'db' : self.db,  
+                'id_query' : id_query,
+                'url' : url,
+                'title' : title,
+                'venue' : venue,
+                'doi' : doi,
+                'date' : date
+            }
 
 
 
@@ -102,7 +118,7 @@ class SdpagesspiderSpider(scrapy.Spider):
 
         api_response, meta = self.request(request_data)
         response = json.loads(api_response.text)
-        print(f'GOT THE JSON..?  --- {response}' )
+        #print(f'GOT THE JSON..?  --- {response}' )
         if 'search-results' in response:
             search_results = response['search-results']
             if 'opensearch:totalResults' in search_results :

@@ -9,6 +9,7 @@
 from HCIScrapy.database import DatabaseConfig
 from datetime import datetime
 from HCIScrapy.config import STORAGE_TEST
+from HCIScrapy.config import SEARCH_QUERY
 
 class HciscrapyPipeline:
     def process_item(self, item, spider):
@@ -20,10 +21,7 @@ class QueryPipeline:
     def __init__(self):
         # Terms of search grouped in ORS of ANDS
         # TODO: Not sure if feasible but generalize if the search is in all fields or only some
-        self.search_terms = [
-                ["VR", "Virtual reality", "augmented reality", "AR", "mixed reality", "XR"],  
-                ["Multiuser", "multi-user", "collaborative"]  
-            ]
+        self.search_terms = SEARCH_QUERY
         self.rows_per_page = 100
         
         
@@ -106,21 +104,21 @@ class MSSQLPipeline:
                     spider.documents = ['/document/10311503/']
                 elif getattr(spider, 'db', 'ACM') == 'Springer':
                     spider.documents = ['/article/10.1007/s11831-022-09831-7']
-                elif getattr(spider, 'db', 'ACM') == 'Springer':
-                    spider.documents = ['/article/10.1007/s11831-022-09831-7']
+                elif getattr(spider, 'db', 'ACM') == 'ScienceDirect':
+                    spider.documents = ['10.1016/j.meddos.2024.07.005']
                 return
             
             spider.rows_par_page = 100
             url_field = getattr(spider, 'url_field', 'doi')
             db = getattr(spider, 'db' , 'NoDB')
-            print('REACHING THE DOCUMENTS')
-            urls = DatabaseConfig.get_all_unreached_issues_urls( url_field , 
+            #print('REACHING THE DOCUMENTS')
+            urls = DatabaseConfig.get_issues( [url_field] , 
                                                                 [
                                                                     ('status', 'IS', None),
                                                                     ('db', '=',db),
                                                                     ('url', 'IS NOT', None)
                                                                 ] )
-            print(f'Documents reached {len(urls)}')
+            #print(f'Documents reached {len(urls)}')
             spider.documents = urls
 
 
@@ -137,7 +135,7 @@ class MSSQLPipeline:
             return item
 
         self.db_param = getattr(spider, 'db', 'NoDB')
-        print('---------------------------------------------------------------------------------------------')
+        #print('---------------------------------------------------------------------------------------------')
 
         if spider.stype == 'Pages' or spider.stype == 'Issues':
             pairs = [(field, value) for field, value in item.items()]

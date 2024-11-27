@@ -23,7 +23,7 @@ class DatabaseConfig:
 
         if cls.testing:
             print(f'DB in testing... inserting page {db} - {query} - {page_count} - {url}')
-            return 10
+            return 12
         
         conn = cls.get_connection()
         cursor = conn.cursor()        
@@ -39,7 +39,7 @@ class DatabaseConfig:
         )
         row = cursor.fetchone()
         if row is None:
-                print('It did not exist')
+                #print('It did not exist')
                 cursor.execute("""
                     INSERT INTO Query_status 
                     (DB, Query, Page_count, Url, Time_stamp)            
@@ -60,13 +60,13 @@ class DatabaseConfig:
                 conn.commit()
                 cursor.close()
                 conn.close()
-                print(f'ADDED!! {last_id}')
+                #print(f'ADDED!! {last_id}')
                 return last_id
         else:
             last_id = row[0]
             cursor.close()
             conn.close()
-            print(f'It existed  {last_id}')
+            #print(f'It existed  {last_id}')
             return last_id
 
     # TODO> Currently, the insertion from pages is done in the pipeline, probably better to move it here
@@ -80,11 +80,11 @@ class DatabaseConfig:
         """
         conn = cls.get_connection()
         cursor = conn.cursor()
-        print('Trying to upsert an issue')
+        #print('Trying to upsert an issue')
         field_to_check, value_to_check = unique_value
         try:
             # Verificar si el registro existe
-            print((f"SELECT 1 FROM issues WHERE {field_to_check} = ?", value_to_check))
+            #print((f"SELECT 1 FROM issues WHERE {field_to_check} = ?", value_to_check))
             cursor.execute(f"SELECT 1 FROM issues WHERE {field_to_check} = ?", value_to_check)
             exists = cursor.fetchone()
 
@@ -93,9 +93,9 @@ class DatabaseConfig:
                 set_clause = ", ".join([f"{field} = ?" for field, _ in pairs])
                 values = [value for _, value in pairs]
                 query = f"UPDATE issues SET {set_clause} WHERE {field_to_check} = ?"
-                print(query, *values, value_to_check)
+                #print(query, *values, value_to_check)
                 cursor.execute(query, *values, value_to_check)
-                print(f"Updated \n\t\t {query} ... {field_to_check} = {value_to_check}")
+                #print(f"Updated \n\t\t {query} ... {field_to_check} = {value_to_check}")
             else:
                 # INSERT query
                 fields = [field for field, _ in pairs]
@@ -104,9 +104,9 @@ class DatabaseConfig:
                 #values.append(value_to_check)
                 placeholders = ", ".join(["?"] * len(fields))
                 query = f"INSERT INTO issues ({', '.join(fields)}) VALUES ({placeholders})"
-                print(query, *values)
+                #print(query, *values)
                 cursor.execute(query, *values)
-                print("Inserted")
+                #print("Inserted")
             
             conn.commit()
         except pyodbc.Error as e:
@@ -117,21 +117,28 @@ class DatabaseConfig:
 
 
 
+
     @classmethod
-    def get_all_unreached_issues_urls(cls,url_field, conditions):
-        
+    def get_issues(cls, select_fields, conditions):
+        """
+            Get issues fields with conditions
+            selec_fields :  Fields to retreive
+            conditions List of tuples of field - condition on the field.
+        """
         if cls.testing:
             return []
 
         conn = cls.get_connection()
         cursor = conn.cursor()
         try:
+            select_clause = ' , '.join(select_fields)
             where_clause = " AND ".join([f" {field} {connector} {('NULL' if value is None  else '?')} " for field, connector, value in conditions])
             values = [value for _, _, value in conditions if value is not None]
-            query = f"SELECT {url_field} FROM Issues WHERE {where_clause}"
-            print(f'Trying to reach query {query}')
+            query = f"SELECT {select_clause} FROM Issues WHERE {where_clause}"
+            #print(f'Trying to reach query {query}')
             cursor.execute(query, *values)
-            urls = [row[0] for row in cursor.fetchall()] 
+            #urls = [row[0] for row in cursor.fetchall()] 
+            urls = cursor.fetchall()
             return urls      
         except pyodbc.Error as e:
             print(f"Error: {e}")
