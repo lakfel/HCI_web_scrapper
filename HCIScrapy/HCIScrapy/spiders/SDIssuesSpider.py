@@ -91,7 +91,7 @@ class SdissuesspiderSpider(scrapy.Spider):
                 'status' :'Not Found'
             }
         else:
-            
+            # TODO maybe is better to send alld the entries at once, not one by one.
             for entry in search_results['entry']:
                 #print(entry)
                 doi = entry['prism:doi']

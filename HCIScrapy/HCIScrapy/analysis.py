@@ -1,52 +1,73 @@
-from HCIScrapy.database import DatabaseConfig
+from database import DatabaseConfig
 from collections import Counter
-
-def analyze_terms(entries, terms_list):
+from config import SEARCH_QUERY
+from config import TRIAL # Probably I would need only the trial and manage the 
+import json 
+import pandas as pd
+def analyze_terms():
 
     fields = ['doi','title','abstract']
     conditions = [
-                    'doi','ID NOT',None
+                    ('doi','IS NOT',None),
+                    #('doi','=','/doi/10.1145/3609395.3610596'),
+                    ('title','IS NOT',None),
+                    ('abstract','IS NOT',None)
                 ]
 
-    # Combinar todas las listas de términos en una sola lista plana
-    all_terms = set(term.lower() for terms in terms_list for term in terms)
-
+    search_terms_str = DatabaseConfig.get_query_terms(TRIAL)
+    print(search_terms_str)
+    search_terms_json= json.loads(search_terms_str)
+    search_terms = search_terms_json['query']
+    documents = DatabaseConfig.get_issues(fields,conditions)
+   
+    all_terms = [term.lower() for terms in search_terms for term in terms]
     results = []
-    for entry in entries:
-        title = entry.get('title', '').lower()
-        abstract = entry.get('abstract', '').lower()
+    docs = [documents[0]]
+
+    print(f'QUERY TERMS = {type(search_terms)} -- {search_terms}\n\t all_terms : {all_terms} \n\t{docs}')
+
+    
+
+    for doi, title, abstract  in documents:
+
+    
+        text = f"{title.lower()} {abstract.lower()}"
         
-        # Combinar título y abstract
-        text = f"{title} {abstract}"
-        
-        # Calcular términos únicos presentes
+        # Unique terms
         unique_terms_in_text = {term for term in all_terms if term in text}
         unique_count = len(unique_terms_in_text)
         
-        # Contar repeticiones de todos los términos
-        term_frequencies = Counter(word for word in text.split() if word in all_terms)
-        total_occurrences = sum(term_frequencies.values())
+        # Repetitions
+        term_frequencies = Counter(word for word in all_terms if word in text)
+        total_occurrences = term_frequencies.total()
         
-        # Guardar resultados para este entry
-        results.append({
-            'entry': entry,
-            'unique_count': unique_count,
-            'total_occurrences': total_occurrences
-        })
+        matching_groups = 0
+        for term_group in search_terms:
+            if any(term.lower() in text for term in term_group):
+                matching_groups += 1
+
+        print(f'Results for {doi} \n\tunique_terms_in_text : {unique_terms_in_text} \n\tterm_frequencies{dict(term_frequencies)} \n\tmatching_groups{matching_groups}')
+
+        values = [
+                    ('keyword_count', unique_count),
+                    ('unique_terms', str(unique_terms_in_text)),
+                    ('key_group_count', matching_groups),
+                    ('keyword_repetition' , total_occurrences),
+                    ('term_frecuency', str(dict(term_frequencies)))
+                ]
+        DatabaseConfig.upsert_issue_query(values,doi,TRIAL)
+
+def get_random_issues():
+    try:
     
-    return results
+        df = DatabaseConfig.get_random_issue_queries(TRIAL, 500)
+        df.to_csv(f'random_issues_trial_{TRIAL}.csv', index=False, encoding='utf-8')
+        #print(f"Datos exportados exitosamente a {output_file}")
 
-# Ejemplo de uso
-entries = [
-    {'title': 'Deep learning applications', 'abstract': 'Deep learning is transforming AI'},
-    {'title': 'Natural language processing', 'abstract': 'NLP deals with human language'}
-]
+    except Exception as e:
+        print(f"Error: {e}")
+    
 
-terms_list = [['deep', 'learning'], ['natural', 'language', 'ai']]
-
-results = analyze_terms(entries, terms_list)
-for result in results:
-    print(f"Title: {result['entry']['title']}")
-    print(f"Unique Terms: {result['unique_count']}, Total Occurrences: {result['total_occurrences']}")
-    print("---")
-
+get_random_issues()
+#analyze_terms()
+    
