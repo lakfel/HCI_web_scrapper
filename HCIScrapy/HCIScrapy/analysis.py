@@ -1,4 +1,4 @@
-from database import DatabaseConfig
+from database import DatabaseManager
 from collections import Counter
 from config import SEARCH_QUERY
 from config import TRIAL # Probably I would need only the trial and manage the 
@@ -14,11 +14,11 @@ def analyze_terms():
                     ('abstract','IS NOT',None)
                 ]
 
-    search_terms_str = DatabaseConfig.get_query_terms(TRIAL)
+    search_terms_str = DatabaseManager.get_query_terms(TRIAL)
     print(search_terms_str)
     search_terms_json= json.loads(search_terms_str)
     search_terms = search_terms_json['query']
-    documents = DatabaseConfig.get_issues(fields,conditions)
+    documents = DatabaseManager.get_issues(fields,conditions)
    
     all_terms = [term.lower() for terms in search_terms for term in terms]
     results = []
@@ -55,12 +55,12 @@ def analyze_terms():
                     ('keyword_repetition' , total_occurrences),
                     ('term_frecuency', str(dict(term_frequencies)))
                 ]
-        DatabaseConfig.upsert_issue_query(values,doi,TRIAL)
+        DatabaseManager.upsert_issue_query(values,doi,TRIAL)
 
 def get_random_issues():
     try:
     
-        df = DatabaseConfig.get_random_issue_queries(TRIAL, 500)
+        df = DatabaseManager.get_random_issue_queries(TRIAL, 500)
         df.to_csv(f'random_issues_trial_{TRIAL}.csv', index=False, encoding='utf-8')
         #print(f"Datos exportados exitosamente a {output_file}")
 

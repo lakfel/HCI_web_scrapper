@@ -1,12 +1,13 @@
 import scrapy
 import time
-from HCIScrapy.database import DatabaseConfig
+from HCIScrapy.database import DatabaseManager
 import requests
 from bs4 import BeautifulSoup
 import re
 import math
 import random 
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
+from HCIScrapy.config import DB_SPRINGER
 
 class SpringerpagesSpider(scrapy.Spider):
 
@@ -16,16 +17,14 @@ class SpringerpagesSpider(scrapy.Spider):
     stype = 'Pages'
 
     # Database
-    db = 'Springer'
+    db = DB_SPRINGER
 
     url_field = 'url'
 
 
-    def __init__(self, db_param='', query_param='', *args, **kwargs):
+    def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.db_param = db_param
-        self.query_param = query_param
         self.total_results = 0
         self.rows_par_page = 20
         self.max_pages = 50
@@ -37,11 +36,10 @@ class SpringerpagesSpider(scrapy.Spider):
 
         # Starting in a number but it will be replaced in the first request
         
-        self.pages_is_set = False
 
         base_search_url = f'{self.base_url}{quote(self.query)}'
         total_results = self.get_number_results(base_search_url)
-        DatabaseConfig.insert_query_totals(self.db, base_search_url, self.query, total_results)
+        DatabaseManager.insert_query_totals(self.db, base_search_url, self.query, total_results)
 
         self.max_pages = min(math.ceil(total_results/self.rows_par_page), self.max_pages)
         #self.max_pages = 1
@@ -49,7 +47,7 @@ class SpringerpagesSpider(scrapy.Spider):
         for page_count in range(1, self.max_pages + 1):
 
             search_url = f'{base_search_url}&page={page_count}'
-            id_query = DatabaseConfig.insert_page(self.db, self.query, page_count, search_url)
+            id_query = DatabaseManager.insert_page(self.db, self.query, page_count, search_url)
              #FIXME Currently working by disabling the robot.txt settings. Figure it out
             yield scrapy.Request(
                 search_url,

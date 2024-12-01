@@ -29,7 +29,6 @@ class SeleniumMiddleware:
 
 
     def spider_opened(self, spider):
-        spider.logger.info("Spider opened: %s" % spider.name)
         if getattr(spider, 'use_selenium', False):
             chrome_options = Options()
             #chrome_options.add_argument("--headless") 
@@ -55,7 +54,7 @@ class SeleniumMiddleware:
 
     def request_html(self, request_data, spider):
         if 'url' in request_data:
-            #print(f'REQUESTING HTML ', request_data)
+            print(f'REQUESTING HTML ', request_data)
             url = request_data['url']
             timeout = 50
             params = {}
@@ -126,7 +125,7 @@ class SeleniumMiddleware:
 
     # TODO If needed the rotative headers must be done in the middleware
     def process_request(self, request, spider):
-
+        return None
         if getattr(spider, 'use_selenium', False):
 
             meta = request.meta
@@ -141,12 +140,7 @@ class SeleniumMiddleware:
             meta = request.meta
             if 'request_data' in meta:
                 request_data = meta['request_data']
-                #print(f'TRYING THE HTML {request_data}')
                 response, meta = self.request_html(request_data, spider)
-                #print(f'RETURNING THE HTML {response} -- {request_data}')
-                #query = request_data['params']['query']
-                #show = request_data['params']['start']
-                #spider.meta[f'{query}-{show}'] = 
                 response = TextResponse(
                     request_data['url'],
                     body=response.text,
@@ -155,7 +149,7 @@ class SeleniumMiddleware:
                 )
                 return response
             return None
-        return None  # Permite que Scrapy maneje la solicitud normalmente
+        return None  
 
     def spider_closed(self, spider):
         # Limpiar el driver cuando el spider termine

@@ -1,6 +1,6 @@
 import scrapy
 import time
-from HCIScrapy.database import DatabaseConfig
+from HCIScrapy.database import DatabaseManager
 from bs4 import BeautifulSoup
 import re
 import math
@@ -39,7 +39,6 @@ class SdpagesspiderSpider(scrapy.Spider):
 
         # Starting in a number but it will be replaced in the first request
         self.max_pages = 40
-        self.pages_is_set = False
 
         if not hasattr(self, 'rows_par_page') or self.rows_par_page == 0:
             self.logger.warning("No max rows_par_page, setting max to 100")
@@ -48,7 +47,7 @@ class SdpagesspiderSpider(scrapy.Spider):
         base_search_url = f'{self.base_url}{quote(self.query)}'
         total_results = self.get_number_results(base_search_url)
         print(f'Total results found {total_results}')
-        DatabaseConfig.insert_query_totals(self.db, base_search_url, self.query, total_results)
+        DatabaseManager.insert_query_totals(self.db, base_search_url, self.query, total_results)
 
         self.max_pages = math.ceil(total_results/self.rows_par_page)
         self.max_pages = 1
@@ -57,7 +56,7 @@ class SdpagesspiderSpider(scrapy.Spider):
             search_url = f'{base_search_url}&show={self.rows_par_page}&offset={((page_count-1)*self.rows_par_page)}'
 
             #TODO This can be better generalized in order to add any type of storage
-            id_query = DatabaseConfig.insert_page(self.db, self.query, page_count, search_url)
+            id_query = DatabaseManager.insert_page(self.db, self.query, page_count, search_url)
             self.ids_query[search_url] = id_query
              #FIXME Currently working by disabling the robot.txt settings. Figure it out
              #TODO IEEE works differently with the excecution of Js information. Adapt it to the current version

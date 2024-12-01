@@ -2,7 +2,7 @@ import scrapy
 from urllib.parse import quote, urlencode
 import time
 import random
-from HCIScrapy.database import DatabaseConfig
+from HCIScrapy.config import DB_SPRINGER
 
 class SpringerissuesspiderSpider(scrapy.Spider):
 
@@ -10,7 +10,8 @@ class SpringerissuesspiderSpider(scrapy.Spider):
     name = "springer_issues"
 
     # Database 
-    db = 'Springer'
+    
+    db = DB_SPRINGER
 
     # Spider's type [Results, Page, Issues]
     stype = 'Issues'

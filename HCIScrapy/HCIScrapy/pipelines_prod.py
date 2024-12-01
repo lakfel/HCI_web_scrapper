@@ -6,7 +6,7 @@
 
 # useful for handling different item types with a single interface
 
-from HCIScrapy.database import DatabaseConfig
+from HCIScrapy.database import DatabaseManager
 from datetime import datetime
 import math
 
@@ -65,7 +65,7 @@ class MSSQLPipeline:
     # TODO store the initial total results query seems completely unnecesary
     def open_spider(self, spider):
         if not self.is_testing:
-            self.conn = DatabaseConfig.get_connection()
+            self.conn = DatabaseManager.get_connection()
             self.cursor = self.conn.cursor()
         if spider.stype == 'Pages':
 
@@ -112,7 +112,7 @@ class MSSQLPipeline:
             url_field = getattr(spider, 'url_field', 'doi')
             db = getattr(spider, 'db' , 'NoDB')
             print('REACHING THE DOCUMENTS')
-            urls = DatabaseConfig.get_all_unreached_issues_urls( url_field , 
+            urls = DatabaseManager.get_all_unreached_issues_urls( url_field , 
                                                                 [
                                                                     ('status', 'IS', None),
                                                                     ('db', '=',db),
@@ -210,7 +210,7 @@ class MSSQLPipeline:
             pairs = [(field, value) for field, value in item.items()]
             url_field_name = getattr(spider, 'url_field')
             url_field = item.get(url_field_name)
-            DatabaseConfig.upsert_issue(pairs, (url_field_name, url_field))
+            DatabaseManager.upsert_issue(pairs, (url_field_name, url_field))
         return item
 
     def close_spider(self, spider):

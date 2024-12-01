@@ -1,4 +1,9 @@
-STORAGE_TEST = False
+
+
+
+
+
+STORAGE_TEST = True
 REQUEST_TEST = False 
 SCRAPPING_TEST = False  
 
@@ -8,4 +13,9 @@ SEARCH_QUERY =  [ # (_ or _ or_ ...) and (_ or _ or_ ...) and ... TODO probbly s
                     ["Multiuser", "multi-user", "collaborative"]  
                 ]
 DBS = ['ACM', 'IEEE' , 'Springer', 'ScienceDirect   ']
+
+DB_ACM = 'ACM'
+DB_IEEE = 'IEEE'
+DB_SPRINGER = 'Springer'
+DB_SD = 'ScienceDirect'
 

@@ -2,7 +2,7 @@ import scrapy
 from urllib.parse import quote, urlencode
 import time
 import random
-from HCIScrapy.database import DatabaseConfig
+from HCIScrapy.database import DatabaseManager
 
 class IeeepagesspiderSpider(scrapy.Spider):
 
@@ -67,7 +67,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
             search_url = f"{self.base_url}?queryText={encoded_query}&pageNumber={page_number}&rowsPerPage={self.rows_par_page}"
             
             print(f'STORING -- {self.db}, {self.query},{page_number}, {search_url}')
-            id_query = DatabaseConfig.insert_page(self.db, self.query,page_number, search_url)
+            id_query = DatabaseManager.insert_page(self.db, self.query,page_number, search_url)
 
             yield scrapy.Request(
                 search_url, 

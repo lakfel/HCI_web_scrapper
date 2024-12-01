@@ -1,10 +1,9 @@
 import pyodbc
 from datetime import datetime
-from config import STORAGE_TEST
-from config import SEARCH_QUERY
-import pandas as pd
+from HCIScrapy.config import STORAGE_TEST
+from HCIScrapy.config import SEARCH_QUERY
 
-class DatabaseConfig:
+class DatabaseManager:
     CONNECTION_STRING = (
         'DRIVER={ODBC Driver 17 for SQL Server};'
         'SERVER=pchc3112a-04\\SQLEXPRESS;'

@@ -6,10 +6,14 @@
 
 # useful for handling different item types with a single interface
 
-from HCIScrapy.database import DatabaseConfig
+from HCIScrapy.database import DatabaseManager
 from datetime import datetime
 from HCIScrapy.config import STORAGE_TEST
 from HCIScrapy.config import SEARCH_QUERY
+from HCIScrapy.config import DB_ACM
+from HCIScrapy.config import DB_IEEE
+from HCIScrapy.config import DB_SD
+from HCIScrapy.config import DB_SPRINGER
 
 class HciscrapyPipeline:
     def process_item(self, item, spider):
@@ -26,20 +30,21 @@ class QueryPipeline:
         
         
     def open_spider(self, spider):
+
         spider.search_terms = self.search_terms
         spider.rows_per_page = self.rows_per_page 
         
-        if spider.db == 'ACM':
+        if spider.db == DB_ACM:
             or_groups = []
             for group in self.search_terms:
-                or_groups.append(" OR ".join([f'(AllField:({term})' for term in group]))
+                or_groups.append(" OR ".join([f'AllField:({term})' for term in group]))
             spider.query = " AND ".join([f'({term})' for term in or_groups])
-        elif spider.db == 'IEEE':
+        elif spider.db == DB_IEEE:
             or_groups = []
             for group in self.search_terms:
                 or_groups.append(" OR ".join([f'("All Metadata":{term})' for term in group]))
             spider.query = " AND ".join([f'({term})' for term in or_groups])
-        elif spider.db == 'Springer' or spider.db == 'ScienceDirect':
+        elif spider.db == DB_SPRINGER or spider.db == DB_SD:
             or_groups = []
             for group in self.search_terms:
                 or_groups.append(" OR ".join([f'"{term}"' for term in group]))
@@ -62,8 +67,9 @@ class MSSQLPipeline:
 
     # TODO store the initial total results query seems completely unnecesary
     def open_spider(self, spider):
+
         if not self.is_testing:
-            self.conn = DatabaseConfig.get_connection()
+            self.conn = DatabaseManager.get_connection()
             self.cursor = self.conn.cursor()
         if spider.stype == 'Pages':
 
@@ -98,13 +104,13 @@ class MSSQLPipeline:
         elif spider.stype == 'Issues':
 
             if self.is_testing:
-                if getattr(spider, 'db', 'ACM') == 'ACM':
+                if getattr(spider, 'db', DB_ACM) == DB_ACM:
                     spider.documents = ['/doi/10.1145/3686215.3688380']
-                elif getattr(spider, 'db', 'ACM') == 'IEEE':
+                elif getattr(spider, 'db', DB_ACM) == DB_IEEE:
                     spider.documents = ['/document/10311503/']
-                elif getattr(spider, 'db', 'ACM') == 'Springer':
+                elif getattr(spider, 'db', DB_ACM) == DB_SPRINGER:
                     spider.documents = ['/article/10.1007/s11831-022-09831-7']
-                elif getattr(spider, 'db', 'ACM') == 'ScienceDirect':
+                elif getattr(spider, 'db', DB_ACM) == DB_SD:
                     spider.documents = ['10.1016/j.meddos.2024.07.005']
                 return
             
@@ -112,7 +118,7 @@ class MSSQLPipeline:
             url_field = getattr(spider, 'url_field', 'doi')
             db = getattr(spider, 'db' , 'NoDB')
             #print('REACHING THE DOCUMENTS')
-            urls = DatabaseConfig.get_issues( [url_field] , 
+            urls = DatabaseManager.get_issues( [url_field] , 
                                                                 [
                                                                     ('status', 'IS', None),
                                                                     ('db', '=',db),
@@ -124,12 +130,12 @@ class MSSQLPipeline:
 
                 
     def process_item(self, item, spider):
-        
+        print(f'PROCESSING ITEMS....')
         if self.is_testing:
             with open("mssqlpipelineTest.txt", 'a',  encoding='utf-8') as file:
                 for field, value in item.items():
                     print(f"{field}: {value}")
-                    print(f"{field}: {value}".encode("utf-8"), file=file)
+                    #print(f"{field}: {value}".encode("utf-8"), file=file)
                 
                     
             return item
@@ -142,7 +148,7 @@ class MSSQLPipeline:
             url_field_name = getattr(spider, 'url_field')
             url_field = item.get(url_field_name)
 
-            DatabaseConfig.upsert_issue(pairs, (url_field_name, url_field))
+            DatabaseManager.upsert_issue(pairs, (url_field_name, url_field))
         return item
 
     def close_spider(self, spider):

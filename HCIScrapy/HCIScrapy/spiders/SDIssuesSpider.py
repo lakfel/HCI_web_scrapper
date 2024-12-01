@@ -4,6 +4,7 @@ import random
 from dotenv import load_dotenv
 import os
 import json
+from HCIScrapy.config import DB_SD
 
 
 class SdissuesspiderSpider(scrapy.Spider):
@@ -11,7 +12,7 @@ class SdissuesspiderSpider(scrapy.Spider):
     name = "sd_issues"
 
     # Database 
-    db = 'ScienceDirect'
+    db = DB_SD
 
     # Spider's type [Results, Page, Issues]
     stype = 'Issues'

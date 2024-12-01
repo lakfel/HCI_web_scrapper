@@ -2,7 +2,6 @@ import scrapy
 from urllib.parse import quote, urlencode
 import time
 import random
-from HCIScrapy.database import DatabaseConfig
 
 class IeeeissuesspiderSpider(scrapy.Spider):
 

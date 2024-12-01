@@ -1,11 +1,12 @@
 import scrapy
 import time
-from HCIScrapy.database import DatabaseConfig
+from HCIScrapy.database import DatabaseManager
 import json
 import math
 import random 
 from dotenv import load_dotenv
 import os
+from HCIScrapy.config import DB_SD
 
 class SdpagesspiderSpider(scrapy.Spider):
     
@@ -14,7 +15,7 @@ class SdpagesspiderSpider(scrapy.Spider):
     stype = 'Pages'
 
     # Database
-    db = 'ScienceDirect'
+    db = DB_SD
 
     url_field = 'doi'
 
@@ -56,13 +57,15 @@ class SdpagesspiderSpider(scrapy.Spider):
             "sort" : "relevance"
         }
         
+        print(f'QUERY {self.query}')
+
         self.total_results = self.get_number_results(request_data)
         print(f'TOTAL RESULTS {self.total_results}')
-        DatabaseConfig.insert_query_totals(self.db, self.base_url, self.query, self.total_results)
+        DatabaseManager.insert_query_totals(self.db, self.base_url, self.query, self.total_results)
         request_data['count'] = self.rows_par_page
         self.max_pages = min(math.ceil(self.total_results/self.rows_par_page),math.ceil(self.max_results/self.rows_par_page))
         
-        #self.max_pages = 2
+        self.max_pages = 1
 
         for page_count in range(1, self.max_pages + 1):
             
@@ -73,7 +76,7 @@ class SdpagesspiderSpider(scrapy.Spider):
 
 
             #TODO This can be better generalized in order to add any type of storage
-            id_query = DatabaseConfig.insert_page(self.db, self.query, page_count, f'{self.query}-{page_count}')
+            id_query = DatabaseManager.insert_page(self.db, self.query, page_count, f'{self.query}-{page_count}')
             self.ids_query[f'{start}'] = id_query
 
             yield scrapy.Request(
