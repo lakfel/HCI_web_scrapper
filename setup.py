@@ -1,0 +1,15 @@
+from setuptools import setup, find_packages
+
+setup(
+	name="HCIScrapy",
+	version="1.0",
+	packages=find_packages(),
+	install_requires=[
+		'scrapy>=2.5.0',
+		'python-dotenv>=0.19.0',
+		'beautifulsoup4>=4.9.3',
+		'pandas>=1.3.0',
+		'selenium>=4.0.0',
+		'pyodbc>=4.0.32',
+	],
+)
