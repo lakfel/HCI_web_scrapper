@@ -2,7 +2,6 @@ import scrapy
 from HCIScrapy.config import DB_ACM
 from urllib.parse import quote
 import time
-from bs4 import BeautifulSoup
 from HCIScrapy.database import DatabaseManager
 import math 
 

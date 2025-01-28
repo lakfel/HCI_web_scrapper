@@ -29,6 +29,9 @@ class SpringerissuesspiderSpider(scrapy.Spider):
         self.metadata = {}
         self.base_url = 'https://link.springer.com'
 
+        self.use_selenium = False
+        self.use_api = False
+
 
     def start_requests(self):
 
@@ -38,6 +41,10 @@ class SpringerissuesspiderSpider(scrapy.Spider):
             self.documents = []
             self.logger.error('NO DOCUMENTS TO DOWNLOAD ')
 
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36"
+        }
+        self.documents = [self.documents[0]]
         for url in self.documents:
 
             search_url = f"{self.base_url}{url}"
@@ -46,19 +53,15 @@ class SpringerissuesspiderSpider(scrapy.Spider):
             yield scrapy.Request(
                 search_url, 
                 meta={'url': url},
+                headers=headers,
                 dont_filter=True
             )
 
-            time.sleep(random.uniform(6, 9))
 
 
 
     def parse(self, response):
-        try:
-            #with open("ieee_test.html", 'w') as file:
-            #    print(response.text.encode("utf-8"),file=file)
-            #with open("ieee_test_meta.js", 'w') as file:
-            #    print(self.metadata,file=file)                
+        try:          
             
             url = response.meta['url']
             item = {'db' : self.db, 'url' : url, 'status' : 'OK', }
@@ -69,11 +72,19 @@ class SpringerissuesspiderSpider(scrapy.Spider):
                 if label:
                     m_text = metric.css('.app-article-metrics-bar__count::text').get().strip()
                     if label == 'Accesses':
-                        item['Downloads'] = ''.join(m_text).strip()
+                        item['Downloads'] = int(''.join(m_text).strip().replace('k','000'))
                     elif label == 'Citations':
-                        item['Citations'] = ''.join(m_text).strip()
-            abstract_a = response.css('section[data-title="Abstract"]').xpath('.//text()').getall()
+                        item['Citations'] = int(''.join(m_text).strip().replace('k','000'))
+            abstract_a = response.css('section[data-title="Abstract"] .c-article-section__content').xpath('.//text()').getall()
             abstract = ''.join(abstract_a).strip()
+            keywords = []
+            # Select all keyword links with the specific data-track-action attribute
+            kwds = response.css('a[data-track-action="view keyword"]::text').getall()
+            if kwds:
+                keywords = [k.strip() for k in kwds if k.strip()]
+                
+            item['keywords'] = ','.join(keywords)
+            title = response.css('meta[name="dc.description"]::attr(content)').get()
             if abstract:
                 item['abstract'] = abstract
             title = response.css('meta[name="citation_title"]::attr(content)').get()
@@ -86,8 +97,8 @@ class SpringerissuesspiderSpider(scrapy.Spider):
             if comments:
                 item['comments'] = comments
                 item['type'] = comments
-
-            yield item
+            print(item)
+            #yield item
         
         except Exception as e:
             self.logger.error(f"Error en parse_search: {e}")

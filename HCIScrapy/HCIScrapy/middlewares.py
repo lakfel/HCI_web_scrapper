@@ -33,21 +33,14 @@ class SeleniumMiddleware:
 
     def spider_opened(self, spider):
         if getattr(spider, 'use_selenium', False):
+            
             #chrome_options.add_argument("--headless") 
             #chrome_options.add_argument("--disable-gpu")   # Improve in wondows
             #chrome_options.add_argument("--no-sandbox")
-            #TODO This probably should go in settings
-            
-
-                
+               
             load_dotenv()
             
                 
-            
-            #lab['options'].add_argument(f"user-data-dir=C:\\Users\\johannavila\\AppData\\Local\\Google\\Chrome\\User Data - BU")   
-            #lab['service'] = Service(f'C:\\Users\\johannavila\\Documents\\Research\\chromedriver-win64\\chromedriver.exe')     
-
-            
             options_sel = Options()
             user_data_path = os.getenv('CHROME_USER_DATA_PATH')
             print(f'user_data_path - {user_data_path}')
