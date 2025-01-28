@@ -35,7 +35,6 @@ class IeeepagesspiderSpider(scrapy.Spider):
         self.wait_timeout = 10
         self.ids_query = {}
 
-
     def start_requests(self):
 
         encoded_query = quote(self.query)

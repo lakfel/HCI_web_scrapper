@@ -127,13 +127,15 @@ class SeleniumMiddleware:
     # TODO: Adapt IEEE issues to follow thisworkflow
     def request_selenium(self, request_data, spider):
 
-
+        
         if spider.name not in self.drivers:
             raise ValueError(f"There is no driver for the spider '{spider.name}'")
 
         if 'url' not in request_data:
             raise KeyError("Missing 'url' in request_data")
         
+        print(f'SELENIUM REQUEST .. data {request_data}')
+
         url = request_data['url']
         driver = self.drivers[spider.name]
         
@@ -150,6 +152,7 @@ class SeleniumMiddleware:
             meta = request_data.get('meta', {})
 
             if 'js' in request_data:
+                print(f'\t ---- JS eecution')
                 js_results = {}
                 for js_name, js in request_data['js']:
                     response = driver.execute_script(js)
@@ -163,7 +166,6 @@ class SeleniumMiddleware:
                 encoding='utf-8',
                 request=None
             )
-            
             return (response, meta)
         except Exception as e:
             spider.logger.error(f"Error in request_selenium: {str(e)}")
@@ -177,10 +179,11 @@ class SeleniumMiddleware:
         if getattr(spider, 'use_selenium', False):
 
             meta = request.meta
-            response, meta = self.request_selenium(meta, spider)
 
+            response, meta = self.request_selenium(meta, spider)
+            #print(f'SELENIUIM ANSWER   {meta}')
             if 'js' in meta:
-                spider.js = meta['js']
+                spider.js[response.url] = meta['js']
 
            #TODO Adapt IEEE and test
             return response
