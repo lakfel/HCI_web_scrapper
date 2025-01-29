@@ -130,7 +130,8 @@ class MSSQLPipeline:
                                                                 [
                                                                 ('db','=',db),
                                                                 ('status', ' IS ', None),
-                                                                (url_field, 'IS NOT ', None)
+                                                                (url_field, 'IS NOT ', None),
+                                                                #('abstract', ' IS ', None)
                                                                  ] )
             #print(f'Documents reached {len(urls)}')
             spider.documents = urls

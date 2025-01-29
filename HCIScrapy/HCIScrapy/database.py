@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-from HCIScrapy.config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
+from config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -188,4 +188,58 @@ class DatabaseManager:
         finally:
             cursor.close()
             conn.close()
+    @classmethod
+    def get_issues_queries(cls, trial, num_records):
+        try:
+            # Create connection with proper error handling
+            try:
+                conn = cls.get_connection()
+                cursor = conn.cursor()
+                print(f"Successfully connected to database: {CONNECTION_STRING}")
+            except sqlite3.Error as e:
+                print(f"Failed to connect to database: {e}")
+                raise
+
+            # Query using SQLite syntax (LIMIT instead of TOP)
+            query = """
+            SELECT 
+                iss.doi,
+                iss.db,
+                iss.title,
+                iss.abstract,
+                iss.keywords
+            FROM ISSUES_QUERY iq 
+            INNER JOIN ISSUES iss ON iq.id_issues = iss.id_issues
+            WHERE id_trial = ? 
+                AND title IS NOT  ?
+                AND abstract IS NOT  ?
+                AND iss.status = 'OK'
+                AND doi = '/doi/10.1145/3604479.3604503'
+            LIMIT ?
+            """
+            print(f"Executing query with trial={trial}, num_records={num_records}")
+
+            # Execute query with proper parameter handling
+            cursor.execute(query, (trial, None, None, num_records))
+            records = cursor.fetchall()
+            print(f"Retrieved {len(records)} records")
+
+            # Process records
+            records_t = []
+            for record in records:
+                cleaned_title = BeautifulSoup(record[2], "html.parser").get_text().replace('\n', ' ')
+                cleaned_abstract = BeautifulSoup(record[3], "html.parser").get_text().replace('\n', ' ')
+                records_t.append([record[0], record[1], cleaned_title, cleaned_abstract, record[4]])
+
+            columns = [desc[0] for desc in cursor.description]
+            df = pd.DataFrame(records_t, columns=columns)
+            return df
+
+        except Exception as e:
+            print(f"Error in get_issues_queries: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals() and conn is not None:
+                conn.close()
+
 

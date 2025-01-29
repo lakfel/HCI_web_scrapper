@@ -112,13 +112,15 @@ def define_paper_nature():
    
 
 def classify_rows():
-    df = DatabaseManager.get_random_issue_queries(TRIAL, 15000)
+
+    print('Quqerying issues')
+    df = DatabaseManager.get_issues_queries(TRIAL, 19000)
     # Apply classification
     df["Terms category 1"], df["Terms category  2"], df["Terms 1"], df["Terms 2"] = zip(*df.apply(classify_record, axis=1))
 
     # Save the results to a new file
-    output_path = "output_file.csv"
-    df.to_csv(output_path, index=False)
+    output_path = "output_file_it2.csv"
+    #df.to_csv(output_path, index=False)
 
     print(f"Classification complete. Results saved to {output_path}")
 
@@ -138,16 +140,18 @@ def find_consecutive_words(text, acronym):
 
 # Classification function
 def classify_record(row):
-
-    text = f"{row['title']} {row['abstract']}".lower()
-    text_case= f"{row['title']} {row['abstract']}"
+    #print(f'CLASSIFIYING ROW... {row}')
+    text = f"{row['Title']} {row['Abstract']} {row['keywords']}".lower()
+    text_case= f"{row['Title']} {row['Abstract']} {row['keywords']}"
 
     complete_terms = TERMS1 + [t.replace(' ','-') for t in TERMS1] + [t.replace(' ','') for t in TERMS1]
     matching_terms1 = [t for t in complete_terms if t in text]
 
     terms2 = TERMS2 + [t.replace(' ','-') for t in TERMS2 if t.replace(' ','-') not in TERMS2] + [t.replace(' ','') for t in TERMS2 if t.replace(' ','') not in TERMS2] 
+    print(f'TERMS 2 {terms2}')
+    print(f'text {text}')
     matching_terms2 = [t for t in terms2 if t in text]
-
+    print(f'matching_terms2 2 {matching_terms2}')
     
     terms3 = TERMS3 + [t.replace(' ','-') for t in TERMS3 if t.replace(' ','-') not in TERMS3] + [t.replace(' ','') for t in TERMS3 if t.replace(' ','') not in TERMS3] + TERMS2_REGEX 
     matching_terms3 = [t for t in terms3 if t in text]

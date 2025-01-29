@@ -44,7 +44,7 @@ class SpringerissuesspiderSpider(scrapy.Spider):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36"
         }
-        self.documents = [self.documents[0]]
+        #self.documents = [self.documents[1]]
         for url in self.documents:
 
             search_url = f"{self.base_url}{url}"
@@ -97,8 +97,8 @@ class SpringerissuesspiderSpider(scrapy.Spider):
             if comments:
                 item['comments'] = comments
                 item['type'] = comments
-            print(item)
-            #yield item
+            #print(item)
+            yield item
         
         except Exception as e:
             self.logger.error(f"Error en parse_search: {e}")

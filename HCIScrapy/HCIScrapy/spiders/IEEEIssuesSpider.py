@@ -71,56 +71,49 @@ class IeeeissuesspiderSpider(scrapy.Spider):
             js_parse = self.js[url]
             item = {'db' : self.db, 'url' : url.replace(self.base_url,'')}
 
-            debug = 0
-            debug+=1
-            print(f' --- Debugging -- {debug}') #1
             js_instruction, metadata = js_parse['metadata']
             
-            debug+=1
-            print(f' --- Debugging -- {debug}') #2
-
             #metadata.json.loads(metadata)
             #print(f'JS RESULTS = {metadata}')
             #return
 
             if 'title' in metadata:
                 item['title'] = metadata['title']
-            debug+=1
-            print(f' --- Debugging -- {debug}')#3
             if 'doi' in metadata:
                 item['doi'] = metadata['doi']
-            debug+=1
-            print(f' --- Debugging -- {debug}')#4
             if 'contentType' in metadata:
                 item['type'] = metadata['contentType']
-            debug+=1
-            print(f' --- Debugging -- {debug}')#5
 
             # Not sure what the best way to get the content type is, I will append all the possibilities       
-            type_checkers = ['isBook', 'isBookWithoutChapters' ,'isChapter', 'isConference', 'isEarlyAccess', 'isJournal', 'isStandard']
+
+            if 'isChapter' in metadata and metadata['isChapter']:
+                item['type'] = 'book chapter'
+            elif 'isBook' in metadata and metadata['isBook']:
+                item['type'] = 'book'
+            elif 'isConference' in metadata and metadata['isConference']:
+                item['type'] = 'conference paper'
+            elif 'isEarlyAccess' in metadata and metadata['isEarlyAccess']:
+                item['type'] = 'early access'
+            elif 'isJournal' in metadata and metadata['isJournal']:
+                item['type'] = 'journal'
+            elif 'isStandard' in metadata and metadata['isStandard']:
+                item['type'] = 'standard'
+            
+                
+
+
+
+
             comments = [t for t in type_checkers if t in metadata and metadata[t]]
-            debug+=1
-            print(f' --- Debugging -- {debug}')#6
             if 'xploreDocumentType' in metadata:
                 comments.append(metadata['xploreDocumentType'])
-            debug+=1
-            print(f' --- Debugging -- {debug}')#7
             if 'contentTypeDisplay' in metadata:
                 comments.append(metadata['contentTypeDisplay'])
             item['Comments'] = ' , '.join(comments)
-            debug+=1
-            print(f' --- Debugging -- {debug}')#8
             
             if 'displayPublicationDate' in metadata:
                 item['date'] = metadata['displayPublicationDate'].strip()
-                #date_day = int(date.split()[0].split('-')[0])
-                #date_month = date.split()[1]
-                #item['date_day'] = date_day
-                #item['date_month'] = date_month
-                #item['date'] = date
-                #date_year = int(date.split()[2])
-            #if 'publicationYear' in metadata:
-            #    item['date_year'] = metadata['publicationYear']
+              
             if 'abstract' in metadata:
                 item['abstract'] = metadata['abstract']
 
