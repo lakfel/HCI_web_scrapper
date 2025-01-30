@@ -6,7 +6,7 @@ REQUEST_TEST = False
 SCRAPPING_TEST = False  
 
 # Number of trial
-TRIAL = 2
+TRIAL = 3
 
 # Search used in this trial
 # This probably should not be in config but pull from the database using the id_trial
@@ -16,16 +16,23 @@ TRIAL = 2
 
 ACRONYMS = ["VR", "AR", "XR", "MR"]
 TERMS1 = ["virtual reality", "virtual realities", "augmented reality", "augmented realities", "extended reality", "extended realities", "mixed reality", "mixed realities"]
-TERMS2 = ["cross platform"]
+TERMS2 = ["cross platform", "multi platform"]
 TERMS3 = ["multi user", "collaborative", "collaboration"]
 TERMS2_REGEX  = ["collaborative environment", "virtual environment"]
 
 
-
+'''
 SEARCH_QUERY =  [
                     ["VR", "AR", "XR", "MR", "virtual reality", "virtual realities", "augmented reality", "augmented realities", "extended reality", "extended realities", "mixed reality", "mixed realities"] ,
                     ["cross platform", "cross-platform","multi user","multi-user", "collaborative", "collaboration", "collaborative environment", "virtual environment"]  
                 ]
+'''
+
+SEARCH_QUERY =  [
+                    [ "virtual reality",  "augmented reality",  "extended reality",  "mixed reality"] ,
+                    ["cross-platform","multi-platform"]  
+                ]
+
 
 CONNECTION_STRING = './data/db.db'
 

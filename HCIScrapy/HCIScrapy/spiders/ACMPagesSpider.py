@@ -34,7 +34,7 @@ class AcmpagesspiderSpider(scrapy.Spider):
 
         
         base_search_url = f"{self.base_url}{quote(self.query.replace(' ','+'),safe='+')}"
-
+        
         request_data = {
             "url" : base_search_url
         }
@@ -49,21 +49,23 @@ class AcmpagesspiderSpider(scrapy.Spider):
         print(f'Info ... rows per page {self.rows_par_page}, Max pages {self.max_pages}')    
         print(f'Testin the totals id: {self.id_query_totals}')
       
-        pages = int(min(math.ceil(self.total_results/self.rows_par_page),self.max_pages))
+        pages = int(min(math.ceil(self.total_results/self.rows_par_page),self.max_pages)) 
         print(f'Info ... pages {pages}')    
+
         #self.rows_par_page = 1
         #page_count = 1
         #pages=1
-
-        for page_count in range(1, pages+1):
+        
+        for page_count in range(0, pages):
 
             print(f'----- requesting page count {page_count}')
             url = f'{base_search_url}&pageSize={self.rows_par_page}&startPage={page_count}'
+            print(url)
             # TODO This must be updated with the trial and so no.
             id_query = DatabaseManager.insert_page(self.db, page_count, url, self.id_query_totals)
             self.ids_query[url] = id_query
 
-            time.sleep(1.5)
+            time.sleep(1)
             
             yield scrapy.Request (
                 url,
@@ -78,7 +80,9 @@ class AcmpagesspiderSpider(scrapy.Spider):
         
         print('PARSING ACM')
         id_query = response.meta['id_query']
-        for item in response.css("li.search__item"):
+        items = response.css("li.search__item")
+        print(f'QUERIES PAGE {id_query} ---- {len(items)}')
+        for item in items:
             publication_type = item.css("div.issue-heading::text").get()
             citations_info = item.css(".citation")
             citations = citations_info.css("::text").get().strip()
@@ -110,16 +114,18 @@ class AcmpagesspiderSpider(scrapy.Spider):
             }
 
     def get_number_results(self, request_data):
-
-        # I first check there is no initial query in the db 
-
-        response, meta = self.request(request_data)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        result_count_tag = soup.find(class_="result__count") 
-        span = soup.find('span', class_ = 'result__count')
-        if not result_count_tag:
-            raise ValueError("Tag not found  -- data-test='results-data-total'.")
-        span_text = span.get_text()
-        result_count = int(span_text.replace(" Results", "").replace(",",""))
-       
-        return result_count
+        try:
+            # Get response using the existing request method
+            response, meta = self.request(request_data)
+            
+            # Use CSS selector to find the result count
+            result_count = response.css('span.result__count::text').get()
+            if not result_count:
+                raise ValueError("Results count element not found with selector 'span.result__count'")
+            
+            # Clean and convert the result count to integer
+            result_count = int(result_count.replace(" Results", "").replace(",", ""))
+            return result_count
+        except Exception as e:
+            self.logger.error(f"Error extracting total results: {str(e)}")
+            return 0

@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-from config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
+from HCIScrapy.config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -88,9 +88,14 @@ class DatabaseManager:
 
         try:
             select_clause = ', '.join(select_fields)
-            where_clause = " AND ".join([f"{field} {connector} ?" for field, connector, _ in conditions])
-            values = [value for _, _, value in conditions]
-            query = f"SELECT {select_clause} FROM Issues WHERE {where_clause}"
+            where_clause = " AND ".join([f"i.{field} {connector} ?" for field, connector, _ in conditions])
+            values = [TRIAL] + [value for _, _, value in conditions]
+            query = f"""
+                SELECT {select_clause} FROM issues_query iq 
+                    INNER JOIN issues i ON  i.id_issues = iq.id_issues WHERE 
+                    id_trial = ? AND
+                    {where_clause}
+                """
             print(f'GETTING ISSUESSSS \n\t -- {query} \n\t {values}')
             cursor.execute(query, values)
             rows = cursor.fetchall()

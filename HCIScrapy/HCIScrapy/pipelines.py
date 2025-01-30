@@ -122,7 +122,7 @@ class MSSQLPipeline:
 
         elif spider.stype == 'Issues':
             
-            spider.rows_par_page = 100
+            #spider.rows_par_page = 100
             url_field = getattr(spider, 'url_field', 'doi')
             db = getattr(spider, 'db' , 'NoDB')
             #print('REACHING THE DOCUMENTS')
@@ -149,17 +149,15 @@ class MSSQLPipeline:
             
         if 'type' in item:
             print(f'Analysing issue type....')
-            issue_type = item['type']
+            issue_type = item['type'].lower()
             print(f'Analysing issue type.... {issue_type}')
             if issue_type not in inclusion_criterea:
                 print(f'Issue type not important  --- {issue_type}')
                 # Check if status already exists in pairs
                 status_index = next((i for i, pair in enumerate(pairs) if pair[0] == 'status'), None)
                 if status_index is not None:
-                    # Update existing status tuple
                     pairs[status_index] = ('status', 'EXC')
                 else:
-                    # Add new status tuple
                     pairs.append(('status', 'EXC'))
 
         #TODO currently the issues table contains the id_query field, this is incorerct since issues are now independen of the search
@@ -176,7 +174,7 @@ class MSSQLPipeline:
                         ('db', getattr(spider, 'db', 'NoDB')),
                         ('id_trial',TRIAL)
                     ]
-            DatabaseManager.upsert_issue_query(values, item['url'], TRIAL)
+            DatabaseManager.upsert_issue_query(values, item['id_issues'], TRIAL)
         return item
 
     def close_spider(self, spider):
