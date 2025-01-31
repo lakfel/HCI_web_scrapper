@@ -100,17 +100,6 @@ class IeeeissuesspiderSpider(scrapy.Spider):
                 item['type'] = 'standard'
             
                 
-
-
-
-
-            comments = [t for t in type_checkers if t in metadata and metadata[t]]
-            if 'xploreDocumentType' in metadata:
-                comments.append(metadata['xploreDocumentType'])
-            if 'contentTypeDisplay' in metadata:
-                comments.append(metadata['contentTypeDisplay'])
-            item['Comments'] = ' , '.join(comments)
-            
             if 'displayPublicationDate' in metadata:
                 item['date'] = metadata['displayPublicationDate'].strip()
               

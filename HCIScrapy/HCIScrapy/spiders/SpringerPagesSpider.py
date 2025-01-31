@@ -58,9 +58,9 @@ class SpringerpagesSpider(scrapy.Spider):
 
         self.max_pages = min(math.ceil(self.total_results/self.rows_par_page), self.max_pages)
 
- 
 
-        for page_count in range(1, self.max_pages + 1):
+      
+        for page_count in range(0, self.max_pages + 1):
             search_url = f'{base_search_url}&page={page_count}'
             request_data = {
                     "url" : search_url

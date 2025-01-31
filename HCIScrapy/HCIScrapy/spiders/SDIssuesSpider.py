@@ -86,12 +86,12 @@ class SdissuesspiderSpider(scrapy.Spider):
         doit = search_results['opensearch:Query']['@searchTerms']
         if results == 0:
             print(f'DOI NOT FOUND {doit[2:-1]}')
-            yield {
+            """yield {
                 'db' : self.db,  
                 'doi' :doit[2:-1],
                 'comments' : 'DOI NOT FOUND',
                 'status' :'Not Found'
-            }
+            }"""
         else:
             # TODO maybe is better to send alld the entries at once, not one by one.
             for entry in search_results['entry']:
@@ -117,7 +117,7 @@ class SdissuesspiderSpider(scrapy.Spider):
 
                     if 'authkeywords' in entry:
                         item['keywords'] = entry['authkeywords']
-
+                    item['status'] = 'OK'
                     yield item
                 else:
                     print(f'NOT RESULTS WITH {doit} --- {data}')

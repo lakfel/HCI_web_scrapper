@@ -104,16 +104,10 @@ class SdpagesspiderSpider(scrapy.Spider):
 
 
     def parse(self, response):
+
         # Get URLs using different methods
         current_url = response.url
-        url_from_meta = response.meta.get('url')
-        url_from_content = response.css('a::attr(href)').get()
-        url_from_xpath = response.xpath('//a/@href').get()
-        
-        # For absolute URLs
-        relative_url = response.css('a::attr(href)').get()
-        absolute_url = response.urljoin(relative_url) if relative_url else None
-        
+
         # Process the JSON response as before
         data = json.loads(response.text)
         search_results = data['search-results']
@@ -131,11 +125,6 @@ class SdpagesspiderSpider(scrapy.Spider):
                 'db': self.db,
                 'id_query': id_query,
                 'url': url,
-                'current_url': current_url,
-                'meta_url': url_from_meta,
-                'content_url': url_from_content,
-                'xpath_url': url_from_xpath,
-                'absolute_url': absolute_url,
                 'title': title,
                 'venue': venue,
                 'doi': doi,

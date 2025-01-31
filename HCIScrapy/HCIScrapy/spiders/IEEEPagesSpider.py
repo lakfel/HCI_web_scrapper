@@ -63,7 +63,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
 """
         self.max_pages = math.ceil(self.total_results/self.rows_par_page)
         #self.max_pages = 1
-        return
+        
         for page_number in range(1, self.max_pages + 1):
     
             

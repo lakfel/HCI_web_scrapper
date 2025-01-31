@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
-from HCIScrapy.config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
+from config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
+#from HCIScrapy.config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -219,7 +220,6 @@ class DatabaseManager:
                 AND title IS NOT  ?
                 AND abstract IS NOT  ?
                 AND iss.status = 'OK'
-                AND doi = '/doi/10.1145/3604479.3604503'
             LIMIT ?
             """
             print(f"Executing query with trial={trial}, num_records={num_records}")

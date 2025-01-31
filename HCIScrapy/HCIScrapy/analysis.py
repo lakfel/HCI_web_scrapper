@@ -119,8 +119,8 @@ def classify_rows():
     df["Terms category 1"], df["Terms category  2"], df["Terms 1"], df["Terms 2"] = zip(*df.apply(classify_record, axis=1))
 
     # Save the results to a new file
-    output_path = "output_file_it2.csv"
-    #df.to_csv(output_path, index=False)
+    output_path = "output_file_it3.csv"
+    df.to_csv(output_path, index=False)
 
     print(f"Classification complete. Results saved to {output_path}")
 
