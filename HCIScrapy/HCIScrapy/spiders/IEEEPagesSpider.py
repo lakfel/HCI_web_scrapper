@@ -43,6 +43,9 @@ class IeeepagesspiderSpider(scrapy.Spider):
             'key_selector' : 'h1..result-item-align',
         }
 
+        #print(request_data['url'])
+        #return
+
         if self.id_query_totals == -1 :
             print('No totals registered... retreiving totals') 
             req_data =  request_data.copy()

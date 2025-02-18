@@ -84,6 +84,7 @@ class AcmpagesspiderSpider(scrapy.Spider):
         print(f'QUERIES PAGE {id_query} ---- {len(items)}')
         for item in items:
             publication_type = item.css("div.issue-heading::text").get()
+            venue = item.css("span.epub-section__title::text").get()
             citations_info = item.css(".citation")
             citations = citations_info.css("::text").get().strip()
             downloads_info = item.css(".citation")
@@ -97,13 +98,14 @@ class AcmpagesspiderSpider(scrapy.Spider):
             title = title_info.css("::text, span::text").getall()
             title = "".join(title).strip()
             doi = title_info.attrib['href']
-            
+            venue 
             yield {
                 'title': title,
                 'doi': doi,
                 'type': publication_type,
                 'date': date_str,
                 'id_issues': doi,
+                'venue' : venue,
                 #'date_day' : date_day,
                 #'date_month' : date_month,
                 #'date_year' : date_year,

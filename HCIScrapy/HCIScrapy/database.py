@@ -213,7 +213,9 @@ class DatabaseManager:
                 iss.db,
                 iss.title,
                 iss.abstract,
-                iss.keywords
+                iss.keywords,
+                iss.venue,
+                iss.date
             FROM ISSUES_QUERY iq 
             INNER JOIN ISSUES iss ON iq.id_issues = iss.id_issues
             WHERE id_trial = ? 
@@ -234,7 +236,7 @@ class DatabaseManager:
             for record in records:
                 cleaned_title = BeautifulSoup(record[2], "html.parser").get_text().replace('\n', ' ')
                 cleaned_abstract = BeautifulSoup(record[3], "html.parser").get_text().replace('\n', ' ')
-                records_t.append([record[0], record[1], cleaned_title, cleaned_abstract, record[4]])
+                records_t.append([record[0], record[1], cleaned_title, cleaned_abstract, record[4], record[5], record[6]])
 
             columns = [desc[0] for desc in cursor.description]
             df = pd.DataFrame(records_t, columns=columns)

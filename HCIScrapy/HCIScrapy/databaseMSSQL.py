@@ -257,7 +257,9 @@ class DatabaseManager:
                 iq.[doi]
                 ,iss.title
                 ,iss.abstract
+                ,iss.keywords
                 ,iss.venue
+                ,iss.date
                 ,iss.[db]
                 ,iq.[keyword_count]
                 ,iq.[key_group_count]

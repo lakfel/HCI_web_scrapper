@@ -42,6 +42,7 @@ class SpringerpagesSpider(scrapy.Spider):
         
 
         base_search_url = f'{self.base_url}{urllib.parse.quote_plus(self.query)}'
+        
         request_data = {
             "url" : base_search_url
         }
@@ -100,11 +101,15 @@ class SpringerpagesSpider(scrapy.Spider):
                 # Get publication date
                 date_str = li.css('span.c-meta__item[data-test="published"]::text').get()
 
+                venue = li.css('a[data-track-action="view journal"]::text').get()
+
                 item = {
                     'title': title,
                     'db': self.db,
                     'id_query': id_query,
                     'url': url,
+                    'date' : date_str,
+                    'venue': venue,
                     'id_issues': url
                 }
                 print(f'ITEM -- {item}')

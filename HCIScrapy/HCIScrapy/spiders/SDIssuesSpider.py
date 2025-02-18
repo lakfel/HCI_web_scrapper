@@ -47,7 +47,7 @@ class SdissuesspiderSpider(scrapy.Spider):
             
         }
 
-        
+        print(f'Number of docs {len(self.documents)}')
         while len(self.documents) > 0:
             dois = []
             for i in range(min(70, len(self.documents))):
@@ -85,7 +85,7 @@ class SdissuesspiderSpider(scrapy.Spider):
         results = int(search_results['opensearch:totalResults'])
         doit = search_results['opensearch:Query']['@searchTerms']
         if results == 0:
-            print(f'DOI NOT FOUND {doit[2:-1]}')
+            print(f'DOI NOT FOUND {doit[2:-1]} \n {data}')
             """yield {
                 'db' : self.db,  
                 'doi' :doit[2:-1],

@@ -210,4 +210,11 @@ Actions
     - I will run a second iteration to get this
 
 
+# Reading protocols
+
+First I take a look and fill the basic statistic information (e.g., venue, publication year, first author affilation coutntry and institution).
+
+Then I jump to introduction, skip RW, and the rest of the paper to extrat the information we need
+
+
 

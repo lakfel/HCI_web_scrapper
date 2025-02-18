@@ -60,17 +60,33 @@ class AcmissuesspiderSpider(scrapy.Spider):
               
 
     def parse(self, response):
-
-        doi = response.meta['doi']
-        print(f'Parsing --- {self.base_url}{doi}')
-        abstract = response.css('section#abstract div[role="paragraph"]::text').get().strip()
-        keywords = response.css('section[property="keywords"] li a::text').getall()
-        keywords_string = ", ".join(keywords)
-        yield {
+        try:
+            doi = response.meta['doi']
+            print(f'Parsing --- {self.base_url}{doi}')
+            
+            # Try first abstract section
+            abstract_section = response.css('section#abstract div[role="paragraph"]::text').get()
+            if not abstract_section:
+                # If not found, try alternative section
+                abstract_section = response.css('section#summary-abstract div[role="paragraph"]::text').get()
+            
+            if abstract_section:
+                abstract = abstract_section.strip()
+            else:
+                print(f"No abstract found for DOI: {doi}")
+                abstract = ""
+                
+            keywords = response.css('section[property="keywords"] li a::text').getall()
+            keywords_string = ", ".join(keywords)
+            
+            yield {
                 'doi': doi,
                 'abstract': abstract,
                 'DB': self.db,
-                'keywords' : keywords_string,
-                'status':'OK'
+                'keywords': keywords_string,
+                'status': 'OK' if abstract else 'NO_ABSTRACT'
             }
+        except Exception as e:
+            self.logger.error(f"Error in parse: {str(e)}")
+          
         

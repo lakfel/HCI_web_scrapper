@@ -6,7 +6,7 @@ REQUEST_TEST = False
 SCRAPPING_TEST = False  
 
 # Number of trial
-TRIAL = 3
+TRIAL = 4
 
 # Search used in this trial
 # This probably should not be in config but pull from the database using the id_trial
@@ -28,9 +28,16 @@ SEARCH_QUERY =  [
                 ]
 '''
 
-SEARCH_QUERY =  [
+'''SEARCH_QUERY =  [
                     [ "virtual reality",  "augmented reality",  "extended reality",  "mixed reality"] ,
                     ["cross-platform","multi-platform"]  
+                ]
+'''
+
+SEARCH_QUERY =  [
+                    [ "virtual reality",  "augmented reality",  "extended reality",  "mixed reality"] ,
+                    ["cross-platform","multi-platform"],
+                    ["multi-user","multiuser","collaborative environment"]  
                 ]
 
 

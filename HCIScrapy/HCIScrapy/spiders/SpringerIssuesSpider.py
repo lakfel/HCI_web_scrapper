@@ -83,6 +83,7 @@ class SpringerissuesspiderSpider(scrapy.Spider):
             if kwds:
                 keywords = [k.strip() for k in kwds if k.strip()]
                 
+
             item['keywords'] = ','.join(keywords)
             title = response.css('meta[name="dc.description"]::attr(content)').get()
             if abstract:
