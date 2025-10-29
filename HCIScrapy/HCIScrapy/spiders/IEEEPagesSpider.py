@@ -45,7 +45,8 @@ class IeeepagesspiderSpider(scrapy.Spider):
 
         #print(request_data['url'])
         #return
-
+        
+        print(f'id querys { self.id_query_totals} --- String : {request_data['url']}')
         if self.id_query_totals == -1 :
             print('No totals registered... retreiving totals') 
             req_data =  request_data.copy()
@@ -53,7 +54,8 @@ class IeeepagesspiderSpider(scrapy.Spider):
             self.total_results = self.get_number_results(request_data)
             self.id_query_totals = DatabaseManager.insert_query_totals(self.db, request_data['url'], self.query, self.total_results)
             print(f'Totals : {self.total_results} -- id_totals {self.id_query_totals}')
-        
+        print(f'Starting the scrapping of IEEE .... totals {self.total_results}')  
+        return
         
         # make it fo all pages
         #for page in range(self.max_pages):
@@ -136,6 +138,7 @@ class IeeepagesspiderSpider(scrapy.Spider):
 
         try:
             response, meta = self.request(request_data)
+            print(response)
             total_results_elements = response.css('.Dashboard-header > span > span')
             total_results_element = (total_results_elements[1]).xpath('.//text()').get()
             total_results = int(total_results_element.replace(',', ''))

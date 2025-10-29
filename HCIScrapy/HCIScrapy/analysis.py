@@ -114,12 +114,12 @@ def define_paper_nature():
 def classify_rows():
 
     print('Quqerying issues')
-    df = DatabaseManager.get_issues_queries(TRIAL, 19000)
+    df = DatabaseManager.get_issues_queries(TRIAL, 20000)
     # Apply classification
     df["Terms category 1"], df["Terms category  2"], df["Terms 1"], df["Terms 2"] = zip(*df.apply(classify_record, axis=1))
 
     # Save the results to a new file
-    output_path = f"output_file_it{TRIAL}.csv"
+    output_path = f"output_file_it{TRIAL}_RT.csv"
     df.to_csv(output_path, index=False)
 
     print(f"Classification complete. Results saved to {output_path}")

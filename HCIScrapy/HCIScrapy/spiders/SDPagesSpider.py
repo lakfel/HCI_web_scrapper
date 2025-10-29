@@ -69,7 +69,7 @@ class SdpagesspiderSpider(scrapy.Spider):
             self.id_query_totals = DatabaseManager.insert_query_totals(self.db, self.base_url, self.query, self.total_results)
         print(f'Total results from GET request: {self.total_results}')
         
-        
+        return
         request_data['count'] = self.rows_par_page
         self.max_pages = min(math.ceil(self.total_results/self.rows_par_page), 
                             math.ceil(self.max_results/self.rows_par_page))

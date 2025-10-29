@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
-from config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
-#from HCIScrapy.config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
+#from config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
+from HCIScrapy.config import STORAGE_TEST, CONNECTION_STRING, SEARCH_QUERY, TRIAL
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -118,6 +118,8 @@ class DatabaseManager:
                     WHERE db = ? AND id_trial = ?
             """, (db, TRIAL))
             
+            print(f'Checking ...   SELECT Id_query_totals, total_results, datetime(timestamp) FROM Query_total_results  WHERE db = {db} AND id_trial = {TRIAL}')
+
             row = cursor.fetchone()
             if row:
                 last_query =  row[0], row[1], row[2]
@@ -226,8 +228,38 @@ class DatabaseManager:
             """
             print(f"Executing query with trial={trial}, num_records={num_records}")
 
+
+            query = """
+            SELECT 
+                iss.doi,
+                iss.db,
+                iss.title,
+                iss.abstract,
+                iss.keywords,
+                iss.venue,
+                iss.date FROM 
+                    Issues iss INNER JOIN
+                (
+                    SELECT * FROM
+                        (SELECT * FROM issues_query WHERE id_trial = 3) iq3
+                        LEFT JOIN 
+                        (SELECT * FROM issues_query WHERE id_trial = 4) iq4
+                        ON iq3.id_issues = iq4.id_issues
+                        WHERE iq4.id_issues IS NULL
+                        AND iq3.DB IN ('ACM','IEEE')
+                ) iq
+                ON iss.id_issues = iq.id_issues
+                WHERE 
+                title IS NOT NULL
+                AND abstract IS NOT  NULL
+                AND iss.status = 'OK'
+
+
+            """
+
             # Execute query with proper parameter handling
-            cursor.execute(query, (trial, None, None, num_records))
+            cursor.execute(query,)
+            # cursor.execute(query, (trial, None, None, num_records))
             records = cursor.fetchall()
             print(f"Retrieved {len(records)} records")
 

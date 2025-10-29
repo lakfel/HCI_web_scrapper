@@ -218,3 +218,8 @@ Then I jump to introduction, skip RW, and the rest of the paper to extrat the in
 
 
 
+# Inclusion critireon
+
+- It needs to be a papers related to VR/XR/MR/AR
+- It needs to be related to cross-platform research. Cross-platform means systems accessible from different platforms. The paper can be about research on cross-platforms, or can be about research in other fields using cross-platforms.
+- It needs to be related to collaborative environments. It means, systems where more than one person interacts. Even if the stury or the case of study involves only one person in the scene, the design/objectives must be related to collaborative environments.

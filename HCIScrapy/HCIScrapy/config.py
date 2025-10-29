@@ -5,8 +5,8 @@ STORAGE_TEST = False
 REQUEST_TEST = False 
 SCRAPPING_TEST = False  
 
-# Number of trial
-TRIAL = 4
+
+TRIAL = 5
 
 # Search used in this trial
 # This probably should not be in config but pull from the database using the id_trial
@@ -35,14 +35,19 @@ SEARCH_QUERY =  [
 '''
 
 SEARCH_QUERY =  [
-                    [ "virtual reality",  "augmented reality",  "extended reality",  "mixed reality"] ,
-                    ["cross-platform","multi-platform"],
-                    ["multi-user","multiuser","collaborative environment"]  
+                    [ "virtual reality",  
+                     "augmented reality",  
+                     "extended reality",  
+                     "mixed reality"] ,
+                    ["cross-platform",
+                     "multi-platform"],
+                    ["multi-user","multiuser",
+                     "collaborative environment"]  
                 ]
 
 
-CONNECTION_STRING = './data/db.db'
 
+CONNECTION_STRING = './data/db.db'
 """
 CONNECTION_STRING = (
         'DRIVER={ODBC Driver 17 for SQL Server};'
@@ -52,6 +57,8 @@ CONNECTION_STRING = (
         'Trusted_Connection=yes;'
     )
 """
+"CONNECTION_STRING = './HCIScrapy/HCIScrapy/data/db.db'"
+
 # Databases
 DB_ACM = 'ACM'
 DB_IEEE = 'IEEE'

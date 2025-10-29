@@ -54,7 +54,7 @@ class SpringerpagesSpider(scrapy.Spider):
             print(f'Totals : {self.total_results} -- id_totals {self.id_query_totals}')
         
         print(f'RESULTS TOTAL --- {self.total_results} .... \n\t Id query ---- {self.id_query_totals}')
-        
+        return
 
 
         self.max_pages = min(math.ceil(self.total_results/self.rows_par_page), self.max_pages)
